@@ -22,7 +22,8 @@ import org.junit.runner.RunWith
 /** Emulator-only: scripts/phase1-test-server.py on the host; VPN app-op granted by test runner. */
 @RunWith(AndroidJUnit4::class)
 class TunnelLifecycleTest {
-    @get:org.junit.Rule
+    @get:org.junit.Rule(order = 0) val lan = LocalNetworkThroughTunnel()
+    @get:org.junit.Rule(order = 1)
     val activity = androidx.test.ext.junit.rules.ActivityScenarioRule(MainActivity::class.java)
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val controller = TunnelController(context)

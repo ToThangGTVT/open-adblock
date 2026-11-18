@@ -16,7 +16,8 @@ import org.junit.Rule
 import org.junit.Test
 
 class PhaseTwoDnsTest {
-    @get:Rule val activity = ActivityScenarioRule(MainActivity::class.java)
+    @get:Rule(order = 0) val lan = LocalNetworkThroughTunnel()
+    @get:Rule(order = 1) val activity = ActivityScenarioRule(MainActivity::class.java)
     private val fixtureHost
         get() =
             androidx.test.platform.app.InstrumentationRegistry.getArguments()

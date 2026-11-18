@@ -8,6 +8,7 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
+import android.net.IpPrefix
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.VpnService
@@ -24,6 +25,7 @@ import com.utc.color.blockads.core.enginebridge.SocketProtector
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -31,7 +33,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.net.InetAddress
 import kotlin.math.roundToInt
+
+/** Everything that requires re-establishing the TUN interface when it changes. */
+private data class TunnelRoutes(val excludedPackages: Set<String>, val bypassLan: Boolean)
 
 @dagger.hilt.android.AndroidEntryPoint
 class BlockAdsVpnService : VpnService(), SocketProtector {
@@ -52,7 +58,7 @@ class BlockAdsVpnService : VpnService(), SocketProtector {
     @Volatile private var acceptingSockets = false
     @Volatile private var lastStartId = 0
     private var snapshot: UnderlyingNetwork? = null
-    private var excludedPackages: Set<String>? = null
+    private var routes: TunnelRoutes? = null
     @Volatile private var liveUpdatesEnabled = false
     @Volatile private var lastNotificationText = ""
 
@@ -108,17 +114,15 @@ class BlockAdsVpnService : VpnService(), SocketProtector {
         }
         monitor = UnderlyingNetworkMonitor(this) { commands.trySend { refreshNetwork() } }
         scope.launch {
-            trafficPolicy.applied
-                .filterNotNull()
-                .map { it.excludedPackages }
+            combine(
+                    trafficPolicy.applied.filterNotNull().map { it.excludedPackages },
+                    settings.bypassLan,
+                    ::TunnelRoutes,
+                )
                 .distinctUntilChanged()
-                .collect { excluded ->
+                .collect { wanted ->
                     commands.trySend {
-                        if (
-                            excludedPackages != null &&
-                                excludedPackages != excluded &&
-                                engine.isRunning()
-                        ) {
+                        if (routes != null && routes != wanted && engine.isRunning()) {
                             shutdown(TunnelState(TunnelStatus.Reconnecting))
                             startTunnel(lastStartId)
                         }
@@ -204,9 +208,23 @@ class BlockAdsVpnService : VpnService(), SocketProtector {
                     .addDnsServer("172.19.0.2")
                     .addDnsServer("fdfe:dcba:9876::2")
                     .setMetered(false)
-            val excluded = trafficPolicy.applied.filterNotNull().first().excludedPackages
+            val wanted =
+                TunnelRoutes(
+                    trafficPolicy.applied.filterNotNull().first().excludedPackages,
+                    settings.bypassLan.first(),
+                )
+            val excluded = wanted.excludedPackages
             excluded.forEach { name -> runCatching { builder.addDisallowedApplication(name) } }
-            excludedPackages = excluded
+            if (wanted.bypassLan) {
+                // Nearby Share, casting and LAN discovery need direct LAN/multicast; native does
+                // not relay multicast and would answer LAN peers from the wrong interface.
+                LocalNetworks.forEach { (address, length) ->
+                    runCatching { builder.excludeRoute(IpPrefix(InetAddress.getByName(address), length)) }
+                }
+                // Longest prefix wins, so the virtual TUN/DNS endpoints stay inside the tunnel.
+                builder.addRoute("172.19.0.0", 30).addRoute("fdfe:dcba:9876::", 126)
+            }
+            routes = wanted
             val connectivity = getSystemService(ConnectivityManager::class.java)
             val previous = connectivity.activeNetwork
             val tun = builder.establish() ?: error("VPN could not be established")
@@ -514,5 +532,19 @@ class BlockAdsVpnService : VpnService(), SocketProtector {
         private const val HideLiveUpdate = "com.utc.color.blockads.HIDE_LIVE_UPDATE"
         private const val ChannelId = "tunnel"
         private const val NotificationId = 1
+
+        /** Private, link-local, multicast and broadcast ranges routed outside the tunnel. */
+        private val LocalNetworks =
+            listOf(
+                "10.0.0.0" to 8,
+                "172.16.0.0" to 12,
+                "192.168.0.0" to 16,
+                "169.254.0.0" to 16,
+                "224.0.0.0" to 4,
+                "255.255.255.255" to 32,
+                "fc00::" to 7,
+                "fe80::" to 10,
+                "ff00::" to 8,
+            )
     }
 }

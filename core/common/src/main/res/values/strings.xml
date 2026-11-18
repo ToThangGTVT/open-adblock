@@ -348,6 +348,8 @@
     <string name="auto_start">"Start after reboot"</string>
     <string name="vpn_permission_required">"Requires VPN permission"</string>
     <string name="ipv6_hint">"Turn off to block IPv6 in the VPN"</string>
+    <string name="bypass_lan">"Bypass local network"</string>
+    <string name="bypass_lan_hint">"Nearby Share, casting and LAN devices connect directly, without filtering"</string>
     <string name="block_quic">"Block QUIC"</string>
     <string name="block_quic_hint">"Use TCP for HTTPS-filtered apps"</string>
     <string name="app_filtering_hint">"Configure ad and HTTPS filtering for each app"</string>

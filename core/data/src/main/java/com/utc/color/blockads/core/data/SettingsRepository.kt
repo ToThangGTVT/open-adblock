@@ -108,6 +108,13 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[Ipv6] = enabled }
     }
 
+    /** Local-network traffic (LAN, link-local, multicast) skips the tunnel, e.g. for Nearby Share. */
+    val bypassLan = preferences.map { it[BypassLan] ?: true }.distinctUntilChanged()
+
+    suspend fun setBypassLan(enabled: Boolean) {
+        store.edit { it[BypassLan] = enabled }
+    }
+
     suspend fun setLogRetentionDays(days: Int) {
         require(days in listOf(1, 7, 30))
         store.edit { it[Retention] = days }
@@ -397,6 +404,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         val AutoStart = booleanPreferencesKey("auto_start")
         val LiveUpdates = booleanPreferencesKey("live_updates")
         val Ipv6 = booleanPreferencesKey("ipv6")
+        val BypassLan = booleanPreferencesKey("bypass_lan")
         val Retention = intPreferencesKey("retention_days")
         val RequestCaptureMinutes = intPreferencesKey("request_capture_minutes")
         val CustomDnsUrl = stringPreferencesKey("custom_dns_url")
@@ -422,6 +430,6 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                 CustomDnsUrl,
                 CustomDnsIp,
             )
-        val boolKeys = listOf(AutoStart, Ipv6, Logging, BlockQuic, LiveUpdates)
+        val boolKeys = listOf(AutoStart, Ipv6, BypassLan, Logging, BlockQuic, LiveUpdates)
     }
 }

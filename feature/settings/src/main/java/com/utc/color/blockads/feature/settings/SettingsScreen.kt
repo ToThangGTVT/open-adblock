@@ -152,6 +152,11 @@ class SettingsScreen private constructor(
         observe(settings.ipv6) {
             toggle(views.ipv6.root, "IPv6", Strings.string.ipv6_hint, it) { settings.setIpv6(!it) }
         }
+        observe(settings.bypassLan) {
+            toggle(views.bypassLan.root, context.getString(Strings.string.bypass_lan), Strings.string.bypass_lan_hint, it) {
+                settings.setBypassLan(!it)
+            }
+        }
         observe(settings.blockQuic) {
             toggle(views.blockQuic.root, context.getString(Strings.string.block_quic), Strings.string.block_quic_hint, it) {
                 settings.setBlockQuic(!it)

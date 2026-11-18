@@ -82,6 +82,11 @@ bằng DataStore, có trong xuất/nhập JSON. Thay đổi danh sách UID bị 
 relay hiện có; ứng dụng đang dùng mạng có thể cần kết nối lại. Nếu thay đổi phạm vi
 bỏ qua tunnel, VPN được thiết lập lại để cập nhật định tuyến Android.
 
+**Cài đặt → Bỏ qua mạng cục bộ** (mặc định bật) đưa LAN riêng (10/8, 172.16/12,
+192.168/16, fc00::/7), link-local, multicast và broadcast ra ngoài tunnel để Nearby
+Share, cast và thiết bị LAN kết nối trực tiếp. Lưu lượng này không qua lọc và không
+chịu tường lửa; tắt công tắc nếu cần lọc cả LAN. Đổi công tắc sẽ thiết lập lại VPN.
+
 App dựa vào `getConnectionOwnerUid` để nhận diện lưu lượng; kết nối không được
 Android gán UID vẫn theo chính sách lọc mặc định. Tường lửa không quản lý các
 profile/người dùng khác hoặc khi VPN đã dừng. Có thể dùng VPN luôn bật của Android

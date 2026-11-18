@@ -27,6 +27,7 @@
             <include android:id="@+id/background_priority" layout="@layout/preference_row" />
             <include android:id="@+id/auto_start" layout="@layout/preference_row" />
             <include android:id="@+id/ipv6" layout="@layout/preference_row" />
+            <include android:id="@+id/bypass_lan" layout="@layout/preference_row" />
             <include android:id="@+id/block_quic" layout="@layout/preference_row" />
             <include android:id="@+id/apps" layout="@layout/preference_row" />
             <include android:id="@+id/https_filtering" layout="@layout/preference_row" />

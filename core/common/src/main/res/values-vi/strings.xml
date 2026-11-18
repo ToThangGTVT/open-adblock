@@ -338,6 +338,8 @@
     <string name="auto_start">"Tự bật sau khởi động"</string>
     <string name="vpn_permission_required">"Cần đã cấp quyền VPN"</string>
     <string name="ipv6_hint">"Tắt để chặn IPv6 trong VPN"</string>
+    <string name="bypass_lan">"Bỏ qua mạng cục bộ"</string>
+    <string name="bypass_lan_hint">"Nearby Share, truyền màn hình và thiết bị LAN kết nối trực tiếp, không qua lọc"</string>
     <string name="block_quic">"Chặn QUIC"</string>
     <string name="block_quic_hint">"Áp dụng cho app lọc HTTPS, để lọc qua TCP"</string>
     <string name="app_filtering_hint">"Lọc quảng cáo và HTTPS theo app"</string>
