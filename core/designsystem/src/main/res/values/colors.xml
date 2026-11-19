@@ -20,4 +20,12 @@
     <color name="coui_panel_handle">#14000000</color>
     <color name="coui_tooltip_container">#FFFFFFFF</color>
     <color name="coui_tooltip_content">#66000000</color>
+    <!-- Unprotected palette: the whole app turns red while protection is off. -->
+    <color name="unprotected_primary">#C62828</color>
+    <color name="unprotected_on_primary">#FFFFFF</color>
+    <color name="unprotected_accent">#FF8A80</color>
+    <color name="unprotected_accent_deep">#5C1414</color>
+    <color name="unprotected_page_background">#F7F0F0</color>
+    <color name="unprotected_card_background">#FFFFFF</color>
+    <color name="unprotected_text_secondary">#5E5050</color>
 </resources>

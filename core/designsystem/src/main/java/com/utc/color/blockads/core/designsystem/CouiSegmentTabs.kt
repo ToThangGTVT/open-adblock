@@ -29,9 +29,9 @@ class CouiSegmentTabs(context: Context, attrs: AttributeSet?) : LinearLayout(con
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val indicatorBounds = RectF()
     private val density = resources.displayMetrics.density
-    private val selectedColor = context.getColor(R.color.brand_lime)
+    private val selectedColor = context.color(R.attr.blockAdsAccent)
     private val unselectedColor = context.getColor(R.color.coui_segment_label)
-    private val indicatorColor = context.getColor(R.color.brand_forest)
+    private val indicatorColor = context.color(R.attr.blockAdsAccentDeep)
     private val shadowColor = context.getColor(R.color.coui_segment_shadow)
     private val textEasing = PathInterpolator(0.3f, 0f, 0.1f, 1f)
     private val pressEasing = PathInterpolator(0f, 0f, 0.1f, 1f)

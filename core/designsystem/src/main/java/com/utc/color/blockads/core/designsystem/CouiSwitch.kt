@@ -43,7 +43,11 @@ class CouiSwitch(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     private var toggleAnimator: ValueAnimator? = null
     private var feedbackAnimator: ValueAnimator? = null
 
-    fun render(value: Boolean, enabled: Boolean) {
+    /**
+     * Shows [value]. Only [animate] a change of the same setting; a freshly built or recycled
+     * switch must jump straight to its state, or every row would replay an off→on toggle.
+     */
+    fun render(value: Boolean, enabled: Boolean, animate: Boolean = true) {
         val stateChanged = value != checked
         val enabledChanged = enabled != isEnabled
         if (!stateChanged && !enabledChanged) return
@@ -64,7 +68,7 @@ class CouiSwitch(context: Context, attrs: AttributeSet?) : View(context, attrs) 
             else -> disabledUncheckedThumb
         }
         val endPosition = if (checked) 1f else 0f
-        if (!stateChanged || !isAttachedToWindow || !isShown) {
+        if (!stateChanged || !animate || !isAttachedToWindow || !isShown) {
             progress = endPosition
             stretch = 1f
             trackColor = endTrack

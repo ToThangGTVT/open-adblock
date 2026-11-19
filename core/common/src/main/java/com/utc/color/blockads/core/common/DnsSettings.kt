@@ -105,4 +105,6 @@ data class FilterStatus(
     val loaded: Int = 0,
     val ignored: Int = 0,
     val error: String? = null,
+    /** Ids of lists being (or queued to be) downloaded. */
+    val downloading: Set<String> = emptySet(),
 )

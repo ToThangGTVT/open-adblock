@@ -16,6 +16,7 @@ import com.utc.color.blockads.core.data.AppsRepository
 import com.utc.color.blockads.core.data.SettingsRepository
 import com.utc.color.blockads.core.designsystem.FormSheet
 import com.utc.color.blockads.core.designsystem.PreferenceIcon
+import com.utc.color.blockads.core.designsystem.PreferenceRow
 import com.utc.color.blockads.core.designsystem.Screen
 import com.utc.color.blockads.core.designsystem.inflater
 import com.utc.color.blockads.core.designsystem.preference
@@ -123,17 +124,22 @@ class CertificateScreen private constructor(
     }
 
     private fun renderApps() {
-        views.selectedApps.removeAllViews()
-        installed.filter { it.packageName in HttpsSettings().apps || it.packageName in config.apps }.forEach(::addApp)
+        val apps = installed.filter { it.packageName in HttpsSettings().apps || it.packageName in config.apps }
+        // Reuse the rows so a toggle animates only the switch that was tapped.
+        if (views.selectedApps.childCount != apps.size) {
+            views.selectedApps.removeAllViews()
+            repeat(apps.size) { views.selectedApps.preference() }
+        }
+        apps.forEachIndexed { index, app -> bindApp(views.selectedApps.getChildAt(index) as PreferenceRow, app) }
     }
 
-    private fun addApp(app: InstalledApp) {
+    private fun bindApp(row: PreferenceRow, app: InstalledApp) {
         val supported = app.packageName !in unsupported
         val selected = app.packageName in config.apps
-        views.selectedApps.preference().bind(
+        row.bind(
             app.label,
             if (supported) app.packageName else context.getString(Strings.string.https_app_unsupported),
-            checked = selected && supported, enabled = supported || selected,
+            checked = selected && supported, enabled = supported || selected, key = app.packageName,
         ) {
             perform {
                 val saved = settings.https.first()

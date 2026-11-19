@@ -129,7 +129,9 @@ class FilterCatalogScreen private constructor(
             }
             is CatalogRow.Entry -> {
                 holder.row.isSelected = false
-                holder.row.bind(row.entry.name, row.summary, checked = row.checked, enabled = !row.pending) {
+                val summary = if (row.pending) context.getString(L10n.string.filter_downloading) else row.summary
+                holder.row.bind(row.entry.name, summary, checked = row.checked, enabled = !row.pending,
+                    busy = row.pending, key = row.entry.url) {
                     toggle(row.entry, !row.checked)
                 }
             }

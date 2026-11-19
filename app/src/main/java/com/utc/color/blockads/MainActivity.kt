@@ -1,6 +1,7 @@
 package com.utc.color.blockads
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -16,7 +17,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.animation.doOnEnd
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.drawToBitmap
 import androidx.core.os.BundleCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -27,6 +30,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.utc.color.blockads.core.common.ThemeMode
+import com.utc.color.blockads.core.common.TunnelStatus
 import com.utc.color.blockads.core.designsystem.Screen
 import com.utc.color.blockads.core.designsystem.color
 import com.utc.color.blockads.core.filter.CatalogSource
@@ -51,6 +55,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var back: OnBackPressedCallback
     private var screen: Screen? = null
     private var themeMode = ThemeMode.System
+    private var unprotected = false
     private val stack = mutableListOf(Page(Destination.Home))
 
     private val notificationPermission =
@@ -82,17 +87,44 @@ class MainActivity : ComponentActivity() {
             override fun handleOnBackPressed() = pop()
         }
         onBackPressedDispatcher.addCallback(this, back)
+        unprotected = viewModel.tunnel.state.value.status !in protecting
         inflateShell()
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.theme.collect { mode ->
-                    if (mode != themeMode) {
-                        closeScreen()
-                        themeMode = mode
-                        inflateShell()
-                    }
+                    if (mode != themeMode) reinflate { themeMode = mode }
                 }
             }
+        }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.tunnel.state.collect { state ->
+                    val off = state.status !in protecting
+                    if (off != unprotected) reinflate { unprotected = off }
+                }
+            }
+        }
+    }
+
+    /** Rebuilds the shell in a new palette, cross-fading from a snapshot of the old one. */
+    private fun reinflate(change: () -> Unit) {
+        val old = binding.root
+        val snapshot = if (old.isLaidOut && old.width > 0 && old.height > 0) old.drawToBitmap() else null
+        val origin = IntArray(2).also(old::getLocationInWindow)
+        closeScreen()
+        change()
+        inflateShell()
+        snapshot ?: return
+        val fade = snapshot.toDrawable(resources).apply {
+            setBounds(origin[0], origin[1], origin[0] + snapshot.width, origin[1] + snapshot.height)
+        }
+        val overlay = window.decorView.overlay
+        overlay.add(fade)
+        ValueAnimator.ofInt(255, 0).apply {
+            duration = 300
+            addUpdateListener { fade.alpha = it.animatedValue as Int }
+            doOnEnd { overlay.remove(fade) }
+            start()
         }
     }
 
@@ -109,6 +141,8 @@ class MainActivity : ComponentActivity() {
                 fontScale = 0f
                 uiMode = (systemMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or night
             })
+            // While protection is off the whole app turns red; otherwise the chosen theme as is.
+            if (unprotected) theme.applyStyle(Design.style.ThemeOverlay_BlockAds_Unprotected, true)
         }
     }
 
@@ -289,3 +323,6 @@ private fun restorePage(bundle: Bundle) = Page(
     bundle.getString("label"),
     bundle.getBundle("state") ?: Bundle(),
 )
+
+/** Same as Home's switch: these states count as protecting; anything else turns the app red. */
+private val protecting = setOf(TunnelStatus.Connected, TunnelStatus.Connecting, TunnelStatus.Reconnecting)

@@ -11,6 +11,7 @@ import com.utc.color.blockads.core.common.userMessage
 import com.utc.color.blockads.core.data.SettingsRepository
 import com.utc.color.blockads.core.designsystem.FormSheet
 import com.utc.color.blockads.core.designsystem.PreferenceIcon
+import com.utc.color.blockads.core.designsystem.PreferenceRow
 import com.utc.color.blockads.core.designsystem.Screen
 import com.utc.color.blockads.core.designsystem.button
 import com.utc.color.blockads.core.designsystem.card
@@ -52,6 +53,7 @@ class FiltersScreen private constructor(
     private var status = filters.status.value
     private var error: String? = null
     private var initialScrollRestored = false
+    private val showLoading = Runnable { views.loading.isVisible = true }
 
     init {
         views.filterTabs.bind(listOf(context.getString(Strings.string.dns_filters), context.getString(Strings.string.browser_filters)), selected) {
@@ -65,7 +67,11 @@ class FiltersScreen private constructor(
             context.getString(Strings.string.custom_rules), context.getString(Strings.string.custom_rules_shared), trailingIcon = PreferenceIcon.Arrow,
         ) { editRules() }
         observe(filters.lists) { lists = it; render(); restoreInitialScroll() }
-        observe(filters.status) { status = it; renderStatus() }
+        observe(filters.status) {
+            val rowsChanged = it.downloading != status.downloading
+            status = it
+            if (rowsChanged) render() else renderStatus()
+        }
         observe(settings.customRules) {
             savedRules = it
             if (activeInput == null) when (editor) {
@@ -112,12 +118,18 @@ class FiltersScreen private constructor(
         views.addUrl.root.bind(context.getString(Strings.string.add_by_url),
             context.getString(Strings.string.filter_url_hint), trailingIcon = PreferenceIcon.Arrow) { addUrl(browser) }
         views.empty.isVisible = visible.isEmpty()
-        views.added.removeAllViews()
-        visible.forEach { list ->
-            val summary = list.error ?: resources.getQuantityString(
+        // Reuse the rows so a toggle animates only the switch that was tapped.
+        if (views.added.childCount != visible.size) {
+            views.added.removeAllViews()
+            repeat(visible.size) { views.added.card().preference() }
+        }
+        visible.forEachIndexed { index, list ->
+            val downloading = list.id in status.downloading
+            val summary = if (downloading) context.getString(Strings.string.filter_downloading) else list.error ?: resources.getQuantityString(
                 Strings.plurals.filter_rules_prefix, list.ruleCount, number.format(list.ruleCount),
             ) + if (list.updatedAt == 0L) context.getString(Strings.string.not_downloaded) else date.format(Date(list.updatedAt))
-            views.added.card().preference().bind(list.name, summary, checked = list.enabled) {
+            val row = (views.added.getChildAt(index) as ViewGroup).getChildAt(0) as PreferenceRow
+            row.bind(list.name, summary, checked = list.enabled, busy = downloading, key = list.id) {
                 perform { filters.setEnabled(list.id, !list.enabled) }
             }
         }
@@ -125,7 +137,15 @@ class FiltersScreen private constructor(
     }
 
     private fun renderStatus() {
-        views.loading.isVisible = status.loading
+        // A download shows at once; a quick recompile after a toggle shows only if it lingers,
+        // so the list below does not jump under the user's finger.
+        val loader = views.loading
+        loader.removeCallbacks(showLoading)
+        when {
+            status.downloading.isNotEmpty() -> loader.isVisible = true
+            status.loading -> if (!loader.isVisible) loader.postDelayed(showLoading, 600)
+            else -> loader.isVisible = false
+        }
         views.error.showMessage(error ?: status.error)
         views.updateAll.root.bind(
             context.getString(Strings.string.update_all),

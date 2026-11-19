@@ -63,11 +63,12 @@ class FilterRepository(
                 .collect {
                     runCatching { reload() }
                         .onFailure { error ->
-                            _status.value =
-                                _status.value.copy(
+                            _status.update {
+                                it.copy(
                                     loading = false,
                                     error = error.userMessage(context.resources) ?: context.getString(L10n.string.filters_load_failed),
                                 )
+                            }
                         }
                     if (!ready.isCompleted) ready.complete(Unit)
                 }
@@ -198,7 +199,7 @@ class FilterRepository(
     private fun file(id: String) = File(directory, "$id.txt")
 
     private suspend fun reload() = compileLock.withLock {
-        _status.value = _status.value.copy(loading = true, error = null)
+        _status.update { it.copy(loading = true, error = null) }
         val active = lists.first().filter { it.enabled }
         require(active.sumOf { file(it.id).length() } <= 32L * 1024 * 1024) {
             context.getString(L10n.string.enabled_filters_too_large)
@@ -220,7 +221,7 @@ class FilterRepository(
                 .digest(listOf(dns, browser, custom).joinToString("\u0000").toByteArray())
                 .joinToString("") { "%02x".format(it) }
         if (signature == compiledSignature) {
-            _status.value = _status.value.copy(loading = false)
+            _status.update { it.copy(loading = false) }
             return@withLock
         }
         val result = JSONObject(engine.replaceRules(dns, browser, custom))
@@ -228,12 +229,14 @@ class FilterRepository(
             context.getString(L10n.string.custom_rules_compile_invalid, result.optJSONArray("errors"))
         }
         compiledSignature = signature
-        _status.value =
-            FilterStatus(
+        _status.update {
+            it.copy(
                 loading = false,
                 loaded = result.getInt("loaded"),
                 ignored = result.getInt("ignored"),
+                error = null,
             )
+        }
     }
 
     suspend fun setEnabled(id: String, enabled: Boolean) {
@@ -357,9 +360,11 @@ class FilterRepository(
     /** Returns whether the list was downloaded (or is unchanged) and applied. */
     suspend fun download(id: String): Boolean =
         detached {
-            downloadLock.withLock {
+            // Marked while queued too, so the row shows it is loading until its turn ends.
+            _status.update { it.copy(downloading = it.downloading + id) }
+            try { downloadLock.withLock {
                 val list = lists.first().first { it.id == id }
-                _status.value = _status.value.copy(loading = true, error = null)
+                _status.update { it.copy(loading = true, error = null) }
                 val result = runCatching {
                     val connection = URI(list.url).toURL().openConnection() as HttpURLConnection
                     connection.connectTimeout = 15000
@@ -429,14 +434,17 @@ class FilterRepository(
                                 else it
                             }
                         }
-                        _status.value =
-                            _status.value.copy(
+                        _status.update {
+                            it.copy(
                                 loading = false,
                                 error = error.userMessage(context.resources) ?: context.getString(L10n.string.filter_download_failed),
                             )
+                        }
                     }
                 reload()
                 result.isSuccess
+            } } finally {
+                _status.update { it.copy(downloading = it.downloading - id) }
             }
         }
 

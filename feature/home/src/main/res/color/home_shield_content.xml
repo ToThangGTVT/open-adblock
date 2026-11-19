@@ -1,0 +1,5 @@
+<!-- Shield label and icon: forest on the lime "on" disc, white on the red "off" disc. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true" android:color="@color/brand_forest" />
+    <item android:color="@android:color/white" />
+</selector>

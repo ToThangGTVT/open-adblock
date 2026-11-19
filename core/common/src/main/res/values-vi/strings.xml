@@ -212,6 +212,7 @@
         <item quantity="other">"%1$s / %2$s danh sách đang bật"</item>
     </plurals>
     <string name="filters_loading">"Đang tải bộ lọc…"</string>
+    <string name="filter_downloading">"Đang tải…"</string>
     <string name="choose_from_catalog">"Chọn từ thư viện"</string>
     <string name="adguard_browser_filters">"Bộ lọc trình duyệt AdGuard"</string>
     <string name="adguard_dns_lists">"Danh sách DNS AdGuard Home"</string>

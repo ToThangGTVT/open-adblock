@@ -1,5 +1,6 @@
 package com.utc.color.blockads.feature.home
 
+import android.graphics.drawable.TransitionDrawable
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -73,6 +74,11 @@ class HomeScreen private constructor(
     private var filters = filter.value
     private var https = HttpsSettings()
     private var busy = false
+    /** Forest gradient while protecting, cross-fading to deep red while off. */
+    private val background = TransitionDrawable(arrayOf(
+        context.getDrawable(R.drawable.home_gradient), context.getDrawable(R.drawable.home_gradient_off),
+    )).apply { isCrossFadeEnabled = true }
+    private var shownOff: Boolean? = null
     private var error: String? = null
 
     init {
@@ -185,7 +191,17 @@ class HomeScreen private constructor(
     private fun renderProtection() {
         val checked = status.status in running
         val canToggle = status.status != TunnelStatus.Connecting
-        views.shieldHalo.isVisible = status.status == TunnelStatus.Off
+        // Lime disc and glow while protecting, red while off.
+        views.shieldHalo.isSelected = checked
+        if (shownOff != !checked) {
+            if (views.root.background !== background) views.root.background = background
+            when {
+                shownOff == null -> if (checked) background.resetTransition() else background.startTransition(0)
+                checked -> background.reverseTransition(300)
+                else -> background.startTransition(300)
+            }
+            shownOff = !checked
+        }
         views.shieldLabel.setText(
             when (status.status) {
                 TunnelStatus.Off -> Strings.string.home_protection_off

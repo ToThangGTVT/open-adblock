@@ -3,6 +3,7 @@
         <shape android:shape="oval"><solid android:color="@color/brand_lime" /></shape>
     </item>
     <item>
-        <shape android:shape="oval"><solid android:color="#B5C9C0" /></shape>
+        <!-- Off: red, dark enough for the white label (4.6:1). -->
+        <shape android:shape="oval"><solid android:color="#D93A3A" /></shape>
     </item>
 </selector>

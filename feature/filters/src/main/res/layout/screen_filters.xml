@@ -1,4 +1,5 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
     <com.utc.color.blockads.core.designsystem.CouiSegmentTabs
         android:id="@+id/filter_tabs"
@@ -31,14 +32,29 @@
                     android:textAppearance="@style/BlockAds.Hint"
                     android:paddingHorizontal="12dp"
                     android:paddingBottom="8dp" />
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:id="@+id/loading"
-                    android:text="@string/filters_loading"
-                    android:textAppearance="@style/BlockAds.Hint"
-                    android:padding="12dp"
-                    android:visibility="gone" />
+                    android:orientation="vertical"
+                    android:paddingHorizontal="12dp"
+                    android:paddingBottom="12dp"
+                    android:visibility="gone">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/filters_loading"
+                        android:textAppearance="@style/BlockAds.Hint"
+                        android:paddingBottom="8dp" />
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/BlockAds.ProgressBar"
+                        android:indeterminate="true"
+                        android:importantForAccessibility="no"
+                        app:trackThickness="4dp"
+                        app:trackCornerRadius="2dp" />
+                </LinearLayout>
             </LinearLayout>
             <TextView
                 android:layout_width="match_parent"

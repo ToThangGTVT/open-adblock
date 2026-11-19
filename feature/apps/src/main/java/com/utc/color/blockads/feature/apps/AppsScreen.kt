@@ -120,7 +120,7 @@ class AppsScreen private constructor(
                     row.blocked -> Strings.string.network_blocked
                     else -> Strings.string.network_allowed
                 }),
-                checked = !row.blocked,
+                checked = !row.blocked, key = app.packageName,
             ) { save(Strings.string.firewall_save_failed) { repository.setNetworkAllowed(app, row.blocked) } }
         } else {
             // An app that only trusts system CAs would show a certificate error on every new host.
@@ -128,6 +128,7 @@ class AppsScreen private constructor(
                 context.getString(Strings.string.https_filtering),
                 context.getString(if (row.httpsSupported) Strings.string.ca_required else Strings.string.https_app_unsupported),
                 checked = row.https && row.httpsSupported, enabled = row.httpsSupported || row.https,
+                key = app.packageName,
             ) {
                 save(Strings.string.action_failed) {
                     val saved = settings.https.first()

@@ -16,6 +16,24 @@
         <item name="android:forceDarkAllowed">false</item>
         <item name="couiSwitchThumbOff">@android:color/white</item>
         <item name="couiSwitchDisabledThumbOn">?attr/colorOnPrimary</item>
+        <item name="blockAdsAccent">@color/brand_lime</item>
+        <item name="blockAdsAccentDeep">@color/brand_forest</item>
+    </style>
+
+    <!-- Applied over any theme (Monet too) while protection is off. -->
+    <style name="ThemeOverlay.BlockAds.Unprotected" parent="">
+        <item name="colorPrimary">@color/unprotected_primary</item>
+        <item name="colorOnPrimary">@color/unprotected_on_primary</item>
+        <item name="colorSecondaryContainer">@color/unprotected_accent</item>
+        <item name="colorOnSecondaryContainer">@color/unprotected_accent_deep</item>
+        <item name="colorSurface">@color/unprotected_card_background</item>
+        <item name="colorOnSurfaceVariant">@color/unprotected_text_secondary</item>
+        <item name="android:colorBackground">@color/unprotected_page_background</item>
+        <item name="android:windowBackground">@color/unprotected_page_background</item>
+        <item name="android:textColorSecondary">@color/unprotected_text_secondary</item>
+        <item name="couiSwitchDisabledThumbOn">?attr/colorOnPrimary</item>
+        <item name="blockAdsAccent">@color/unprotected_accent</item>
+        <item name="blockAdsAccentDeep">@color/unprotected_accent_deep</item>
     </style>
 
     <style name="Theme.BlockAds.Views.Monet">

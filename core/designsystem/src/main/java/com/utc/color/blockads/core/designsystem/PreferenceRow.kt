@@ -27,6 +27,7 @@ enum class PreferenceIcon(@DrawableRes val drawable: Int) {
 class PreferenceRow(context: Context, attrs: AttributeSet?) : LinearLayout(context, attrs) {
     private val views = PreferenceContentBinding.inflate(LayoutInflater.from(context), this)
     private var checked: Boolean? = null
+    private var boundKey: Any? = null
 
     /** Trailing icon, e.g. the anchor of an Info row's help tooltip. */
     val trailingIconView: View get() = views.trailingIcon
@@ -55,8 +56,13 @@ class PreferenceRow(context: Context, attrs: AttributeSet?) : LinearLayout(conte
         trailingIcon: PreferenceIcon? = null,
         checked: Boolean? = null,
         enabled: Boolean = true,
+        busy: Boolean = false,
+        key: Any? = title.toString(),
         action: (() -> Unit)? = null,
     ) {
+        // Animate the switch only when this row keeps showing the same setting ([key]).
+        val sameSetting = this.checked != null && checked != null && boundKey == key
+        boundKey = key
         views.title.text = title
         views.summary.text = summary
         views.summary.isVisible = !summary.isNullOrBlank()
@@ -67,8 +73,9 @@ class PreferenceRow(context: Context, attrs: AttributeSet?) : LinearLayout(conte
             else com.google.android.material.R.attr.colorOnSurfaceVariant
             views.trailingIcon.imageTintList = ColorStateList.valueOf(context.color(tint))
         }
+        views.progress.isVisible = busy
         views.toggle.isVisible = checked != null
-        views.toggle.render(checked == true, enabled)
+        views.toggle.render(checked == true, enabled, animate = sameSetting)
         views.toggle.isClickable = checked != null && enabled && action != null
         this.checked = checked
         isEnabled = enabled

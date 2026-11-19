@@ -1,4 +1,5 @@
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <ImageView
         android:id="@+id/icon"
         android:layout_width="32dp"
@@ -31,6 +32,17 @@
         android:importantForAccessibility="no"
         android:scaleType="centerInside"
         android:visibility="gone" />
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:importantForAccessibility="no"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:indicatorColor="?attr/colorPrimary"
+        app:indicatorSize="20dp"
+        app:trackThickness="2dp" />
     <com.utc.color.blockads.core.designsystem.CouiSwitch
         android:id="@+id/toggle"
         android:layout_width="38dp"

@@ -1,4 +1,7 @@
 <resources>
     <attr name="couiSwitchThumbOff" format="color|reference" />
     <attr name="couiSwitchDisabledThumbOn" format="color|reference" />
+    <!-- Brand accent pair (lime on forest) used by the segmented tabs and Home header. -->
+    <attr name="blockAdsAccent" format="color|reference" />
+    <attr name="blockAdsAccentDeep" format="color|reference" />
 </resources>

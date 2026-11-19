@@ -217,6 +217,7 @@
         <item quantity="other">"%1$s / %2$s lists enabled"</item>
     </plurals>
     <string name="filters_loading">"Loading filters…"</string>
+    <string name="filter_downloading">"Downloading…"</string>
     <string name="choose_from_catalog">"Choose from catalog"</string>
     <string name="adguard_browser_filters">"AdGuard browser filters"</string>
     <string name="adguard_dns_lists">"AdGuard Home DNS lists"</string>
