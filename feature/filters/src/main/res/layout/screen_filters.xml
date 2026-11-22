@@ -1,13 +1,26 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+    <!-- Fixed slot: showing or hiding the bar never moves the content below. -->
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/loading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="4dp"
+        style="@style/BlockAds.ProgressBar"
+        android:contentDescription="@string/filters_loading"
+        android:indeterminate="true"
+        android:visibility="invisible"
+        app:trackThickness="4dp"
+        app:trackCornerRadius="2dp" />
     <com.utc.color.blockads.core.designsystem.CouiSegmentTabs
         android:id="@+id/filter_tabs"
         style="@style/BlockAds.SegmentedTabs"
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="4dp" />
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -19,43 +32,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             style="@style/BlockAds.PageColumn">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                style="@style/BlockAds.CardColumn">
-                <include android:id="@+id/overview" layout="@layout/preference_row" />
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/list_count"
-                    android:textAppearance="@style/BlockAds.Hint"
-                    android:paddingHorizontal="12dp"
-                    android:paddingBottom="8dp" />
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/loading"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="12dp"
-                    android:paddingBottom="12dp"
-                    android:visibility="gone">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/filters_loading"
-                        android:textAppearance="@style/BlockAds.Hint"
-                        android:paddingBottom="8dp" />
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        style="@style/BlockAds.ProgressBar"
-                        android:indeterminate="true"
-                        android:importantForAccessibility="no"
-                        app:trackThickness="4dp"
-                        app:trackCornerRadius="2dp" />
-                </LinearLayout>
-            </LinearLayout>
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -63,6 +39,28 @@
                 android:textAppearance="@style/BlockAds.Hint"
                 android:padding="12dp"
                 android:visibility="gone" />
+            <!-- DNS and browser tabs: the lists of the selected kind. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/list_page"
+                android:orientation="vertical">
+            <!-- Plain description of the tab, not a card: it has nothing to tap. -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/overview"
+                android:textAppearance="@style/BlockAds.Hint"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="4dp" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/list_count"
+                android:textAppearance="@style/BlockAds.Hint"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="12dp" />
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -102,17 +100,14 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/added"
                 android:orientation="vertical" />
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/shared_management"
-                android:textAppearance="@style/BlockAds.Title"
-                android:accessibilityHeading="true"
-                android:padding="12dp" />
+            </LinearLayout>
+            <!-- Shared tab: actions that cover DNS and browser lists together. -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:id="@+id/shared_page"
                 android:orientation="vertical"
+                android:visibility="gone"
                 style="@style/BlockAds.CardColumn">
                 <include android:id="@+id/update_all" layout="@layout/preference_row" />
                 <include android:id="@+id/custom_rules" layout="@layout/preference_row" />

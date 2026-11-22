@@ -43,6 +43,7 @@ import com.utc.color.blockads.feature.home.HomeScreen
 import com.utc.color.blockads.feature.querylog.AppRequestsScreen
 import com.utc.color.blockads.feature.querylog.QueryLogScreen
 import com.utc.color.blockads.feature.settings.SettingsScreen
+import com.utc.color.blockads.core.tunnel.BlockAdsTileService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import com.utc.color.blockads.core.common.R as Strings
@@ -104,6 +105,19 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        if (savedInstanceState == null) handleTileLaunch(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleTileLaunch(intent)
+    }
+
+    /** The Quick Settings tile hands over here when turning on needs a consent dialog. */
+    private fun handleTileLaunch(intent: Intent?) {
+        if (intent?.action != BlockAdsTileService.ActionStartProtection) return
+        intent.action = Intent.ACTION_MAIN
+        if (viewModel.tunnel.state.value.status !in protecting) setProtection(true)
     }
 
     /** Rebuilds the shell in a new palette, cross-fading from a snapshot of the old one. */

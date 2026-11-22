@@ -74,6 +74,8 @@
 
     <style name="BlockAds.CardColumn" parent="">
         <item name="android:background">@drawable/bg_card</item>
+        <!-- Clip row ripples to the rounded corners. -->
+        <item name="android:clipToOutline">true</item>
         <item name="android:orientation">vertical</item>
         <item name="android:layout_marginBottom">8dp</item>
     </style>

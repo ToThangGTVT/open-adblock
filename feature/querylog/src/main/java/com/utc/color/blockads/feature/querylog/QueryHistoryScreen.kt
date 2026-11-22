@@ -1,9 +1,11 @@
 package com.utc.color.blockads.feature.querylog
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
@@ -45,6 +47,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import com.utc.color.blockads.core.common.R as Strings
+import com.utc.color.blockads.core.designsystem.R as Design
 
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class QueryHistoryScreen private constructor(
@@ -182,7 +185,14 @@ internal class QueryHistoryScreen private constructor(
         val names = listOf(context.getString(Strings.string.all)) + options.map { it.label }
         val appTitle = context.getString(Strings.string.apps)
         views.appFilter.root.bind(appTitle, names[selectedApp], trailingIcon = PreferenceIcon.Dropdown) {
-            show(choiceSheet(context, appTitle, names, selectedApp) {
+            val icon = { position: Int, view: ImageView ->
+                (view.tag as? Job)?.cancel()
+                val packageName = options.getOrNull(position - 1)?.packageName
+                view.setImageBitmap(packageName?.let(apps::cachedIcon))
+                view.tag = packageName?.let { scope.launch { view.setImageBitmap(apps.icon(it)) } }
+            }
+            show(choiceSheet(context, appTitle, names, selectedApp, icon = icon,
+                searchHint = context.getString(Strings.string.search_apps)) {
                 select(selection.value.copy(uid = if (it == 0) -1 else options[it - 1].uid))
             })
         }
@@ -205,13 +215,16 @@ internal class QueryHistoryScreen private constructor(
         binding.root.visibility = if (row == null) View.INVISIBLE else View.VISIBLE
         if (row == null) return
         val app = appsByUid[row.uid]
-        binding.identity.root.bind(row.domain, app?.label ?: fallbackName(row.uid)) { openDetails(row) }
+        val meta = "${app?.label ?: fallbackName(row.uid)} · ${time.format(Date(row.timestamp))} · ${row.protocol.uppercase()}"
+        binding.identity.root.bind(row.domain, meta) { openDetails(row) }
+        // Blocked requests are marked by the red card instead of a status label.
+        binding.identity.root.stateDescription = context.getString(row.statusLabel)
+        binding.queryRow.backgroundTintList =
+            if (row.blocked) ColorStateList.valueOf(context.getColor(Design.color.query_blocked_background)) else null
         binding.identity.root.showIcon(app?.let { apps.cachedIcon(it.packageName) })
         if (app != null) holder.icon = scope.launch {
             binding.identity.root.showIcon(apps.icon(app.packageName))
         }
-        binding.details.text = "${context.getString(row.statusLabel)} · ${time.format(Date(row.timestamp))} · ${row.protocol.uppercase()}"
-        binding.details.setOnClickListener { openDetails(row) }
         newRows[row.id]?.let { delay ->
             newRows = newRows - row.id
             binding.root.play(delay)

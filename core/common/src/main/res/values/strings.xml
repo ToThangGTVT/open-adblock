@@ -414,4 +414,11 @@
     <string name="home_https_description">Block ads in your browser</string>
     <string name="expand_dashboard">Expand dashboard</string>
     <string name="collapse_dashboard">Collapse dashboard</string>
+    <string name="qs_tile_label">Ad blocking</string>
+    <string name="qs_tile_on">On</string>
+    <string name="qs_tile_off">Off</string>
+    <string name="qs_tile_connecting">Turning on…</string>
+    <string name="filter_tab_dns">DNS</string>
+    <string name="filter_tab_browser">Browser</string>
+    <string name="filter_tab_manage">Manage</string>
 </resources>

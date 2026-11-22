@@ -260,7 +260,7 @@ class SettingsScreen private constructor(
     ) {
         val title = context.getString(label)
         row.bind(title, options[index], trailingIcon = PreferenceIcon.Dropdown) {
-            show(choiceSheet(context, title, options, index, summary, select))
+            show(choiceSheet(context, title, options, index, summary, onSelect = select))
         }
     }
 

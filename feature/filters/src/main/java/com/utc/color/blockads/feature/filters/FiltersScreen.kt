@@ -43,7 +43,7 @@ class FiltersScreen private constructor(
     private val date = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale)
     private val number = NumberFormat.getIntegerInstance(locale)
     private var selected = state.getInt("tab")
-    private val scrollPositions = state.getIntArray("scrolls") ?: IntArray(2)
+    private val scrollPositions = (state.getIntArray("scrolls") ?: IntArray(0)).copyOf(3)
     private val urlDrafts = state.getStringArray("urls") ?: arrayOf("", "")
     private var customDraft: String? = state.getString("rulesDraft")
     private var editor = state.getString("editor")?.let(Editor::valueOf)
@@ -53,10 +53,10 @@ class FiltersScreen private constructor(
     private var status = filters.status.value
     private var error: String? = null
     private var initialScrollRestored = false
-    private val showLoading = Runnable { views.loading.isVisible = true }
 
     init {
-        views.filterTabs.bind(listOf(context.getString(Strings.string.dns_filters), context.getString(Strings.string.browser_filters)), selected) {
+        val tabs = listOf(Strings.string.filter_tab_dns, Strings.string.filter_tab_browser, Strings.string.filter_tab_manage)
+        views.filterTabs.bind(tabs.map(context::getString), selected.coerceIn(tabs.indices)) {
             if (selected == it) return@bind
             scrollPositions[selected] = views.pageList.scrollY
             selected = it
@@ -97,16 +97,13 @@ class FiltersScreen private constructor(
     }
 
     private fun render() {
+        val shared = selected == SharedTab
+        views.listPage.isVisible = !shared
+        views.sharedPage.isVisible = shared
+        if (shared) return renderStatus()
         val browser = selected == 1
         val visible = lists.filter { it.browser == browser }
-        views.overview.root.bind(
-            context.getString(if (browser) Strings.string.web_filtering else Strings.string.domain_blocking),
-            context.getString(if (browser) Strings.string.browser_https_required else Strings.string.all_apps_dns_hint),
-            trailingIcon = PreferenceIcon.Info,
-        ) {
-            showHelp(views.overview.root.trailingIconView,
-                if (browser) Strings.string.browser_filters_help else Strings.string.dns_filters_help)
-        }
+        views.overview.setText(if (browser) Strings.string.browser_https_required else Strings.string.all_apps_dns_hint)
         views.listCount.text = resources.getQuantityString(
             Strings.plurals.lists_enabled, visible.size, visible.count { it.enabled }, visible.size,
         )
@@ -137,15 +134,8 @@ class FiltersScreen private constructor(
     }
 
     private fun renderStatus() {
-        // A download shows at once; a quick recompile after a toggle shows only if it lingers,
-        // so the list below does not jump under the user's finger.
-        val loader = views.loading
-        loader.removeCallbacks(showLoading)
-        when {
-            status.downloading.isNotEmpty() -> loader.isVisible = true
-            status.loading -> if (!loader.isVisible) loader.postDelayed(showLoading, 600)
-            else -> loader.isVisible = false
-        }
+        // The bar has its own fixed slot above the tabs, so it can show at once without moving the list.
+        if (status.downloading.isNotEmpty() || status.loading) views.loading.show() else views.loading.hide()
         views.error.showMessage(error ?: status.error)
         views.updateAll.root.bind(
             context.getString(Strings.string.update_all),
@@ -260,3 +250,6 @@ class FiltersScreen private constructor(
 
     private enum class Editor { Dns, Browser, Rules }
 }
+
+/** Index of the tab with actions shared by DNS and browser lists. */
+private const val SharedTab = 2

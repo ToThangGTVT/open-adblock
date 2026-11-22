@@ -17,13 +17,10 @@ import android.widget.TextView
 import androidx.dynamicanimation.animation.FloatValueHolder
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
-import com.utc.color.blockads.core.designsystem.databinding.SegmentTabsContentBinding
 import kotlin.math.ceil
-import kotlin.math.min
 
 class CouiSegmentTabs(context: Context, attrs: AttributeSet?) : LinearLayout(context, attrs) {
-    private val views = SegmentTabsContentBinding.inflate(LayoutInflater.from(context), this)
-    private val labels = listOf(views.first, views.second)
+    private var labels = emptyList<CouiSegmentLabel>()
     private val mediumTypeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
     private val measurePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = mediumTypeface }
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -41,11 +38,8 @@ class CouiSegmentTabs(context: Context, attrs: AttributeSet?) : LinearLayout(con
     private val centerSpring = spring(center) { invalidate() }
     private val widthSpring = spring(indicatorWidth) { invalidate() }
     private val indicatorScaleSpring = spring(indicatorScale) { invalidate() }
-    private val labelSprings = labels.map { label ->
-        val scale = FloatValueHolder(1f)
-        spring(scale) { label.scaleX = scale.value; label.scaleY = scale.value }
-    }
-    private val textAnimators = arrayOfNulls<ValueAnimator>(2)
+    private var labelSprings = emptyList<SpringAnimation>()
+    private var textAnimators = emptyArray<ValueAnimator?>()
     private var selected = 0
     private var previousWidth = -1
     private var previousDirection = -1
@@ -55,7 +49,8 @@ class CouiSegmentTabs(context: Context, attrs: AttributeSet?) : LinearLayout(con
     }
 
     fun bind(titles: List<String>, selected: Int, onSelect: (Int) -> Unit) {
-        require(titles.size == labels.size && selected in labels.indices)
+        require(titles.size >= 2 && selected in titles.indices)
+        if (titles.size != labels.size) createLabels(titles.size)
         this.selected = selected
         labels.forEachIndexed { index, label ->
             label.text = titles[index]
@@ -83,30 +78,50 @@ class CouiSegmentTabs(context: Context, attrs: AttributeSet?) : LinearLayout(con
         requestLayout()
     }
 
+    private fun createLabels(count: Int) {
+        labelSprings.forEach { it.cancel() }
+        textAnimators.forEach { it?.cancel() }
+        removeAllViews()
+        val inflater = LayoutInflater.from(context)
+        labels = List(count) {
+            (inflater.inflate(R.layout.segment_tab_label, this, false) as CouiSegmentLabel).also(::addView)
+        }
+        labelSprings = labels.map { label ->
+            val scale = FloatValueHolder(1f)
+            spring(scale) { label.scaleX = scale.value; label.scaleY = scale.value }
+        }
+        textAnimators = arrayOfNulls(count)
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        if (labels.isEmpty()) return super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         val available = (MeasureSpec.getSize(widthMeasureSpec) - paddingStart - paddingEnd).coerceAtLeast(0)
-        val naturalWidths = labels.map { label ->
+        val natural = labels.map { label ->
             measurePaint.textSize = label.textSize
             ceil(measurePaint.measureText(label.text.toString())).toInt() + label.paddingStart + label.paddingEnd
         }
-        val first = naturalWidths[0]
-        val second = naturalWidths[1]
-        val half = available / 2
-        // With two segments, the COUI width distribution only changes when one label needs more room.
-        val firstWidth = when {
-            first <= half && second > half -> available - min(second, available - first)
-            second <= half && first > half -> min(first, available - second)
-            else -> half
+        // COUI keeps equal segments and only widens one whose label needs more room than its share.
+        val share = available / labels.size
+        val wide = natural.map { it > share }
+        val widths = if (wide.none { it }) {
+            List(labels.size) { share }
+        } else if (natural.sum() <= available) {
+            // Long labels get their full text; the short ones split what is left.
+            val rest = (available - natural.filterIndexed { i, _ -> wide[i] }.sum()) / wide.count { !it }
+            natural.mapIndexed { i, width -> if (wide[i]) width else rest }
+        } else {
+            // Not everything fits: short labels keep their text and the long ones share the rest.
+            val rest = (available - natural.filterIndexed { i, _ -> !wide[i] }.sum()) / wide.count { it }
+            natural.mapIndexed { i, width -> if (wide[i]) rest else width }
         }
         val maxWidth = context.dp(1000)
-        labels[0].layoutParams.width = firstWidth.coerceAtMost(maxWidth)
-        labels[1].layoutParams.width = (available - firstWidth).coerceAtMost(maxWidth)
+        labels.forEachIndexed { i, label -> label.layoutParams.width = widths[i].coerceIn(0, maxWidth) }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
     }
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
-        if (previousWidth != width || previousDirection != layoutDirection) {
+        if (labels.isNotEmpty() && (previousWidth != width || previousDirection != layoutDirection)) {
             previousWidth = width
             previousDirection = layoutDirection
             val label = labels[selected]

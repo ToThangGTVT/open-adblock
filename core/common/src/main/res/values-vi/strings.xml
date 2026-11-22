@@ -398,4 +398,11 @@
     <string name="home_https_description">Chặn quảng cáo trong trình duyệt</string>
     <string name="expand_dashboard">Mở rộng bảng điều khiển</string>
     <string name="collapse_dashboard">Thu gọn bảng điều khiển</string>
+    <string name="qs_tile_label">Chặn quảng cáo</string>
+    <string name="qs_tile_on">Đang bật</string>
+    <string name="qs_tile_off">Đang tắt</string>
+    <string name="qs_tile_connecting">Đang bật…</string>
+    <string name="filter_tab_dns">DNS</string>
+    <string name="filter_tab_browser">Trình duyệt</string>
+    <string name="filter_tab_manage">Quản lý chung</string>
 </resources>

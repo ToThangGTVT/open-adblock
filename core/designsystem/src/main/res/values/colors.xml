@@ -28,4 +28,6 @@
     <color name="unprotected_page_background">#F7F0F0</color>
     <color name="unprotected_card_background">#FFFFFF</color>
     <color name="unprotected_text_secondary">#5E5050</color>
+    <!-- Query log rows whose request was blocked. -->
+    <color name="query_blocked_background">#FDE4E2</color>
 </resources>

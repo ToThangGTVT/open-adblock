@@ -1,0 +1,4 @@
+<com.utc.color.blockads.core.designsystem.CouiSegmentLabel xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/BlockAds.SegmentedTabLabel"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent" />

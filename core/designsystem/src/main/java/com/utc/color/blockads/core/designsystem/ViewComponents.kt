@@ -7,11 +7,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.TextView
 import androidx.annotation.AttrRes
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
@@ -81,36 +84,58 @@ class FormSheet(context: Context, title: CharSequence) {
     }
 }
 
-/** COUI ListPreference panel: single choice rows with a reserved check slot, then Cancel. */
+/**
+ * COUI ListPreference panel: single choice rows with a reserved check slot, then Cancel.
+ * [icon] fills a leading 32dp icon per entry; [searchHint] adds a field that filters entries.
+ */
 fun choiceSheet(
     context: Context,
     title: CharSequence,
     entries: List<String>,
     selected: Int,
     summary: (Int) -> String? = { null },
+    icon: ((position: Int, view: ImageView) -> Unit)? = null,
+    searchHint: CharSequence? = null,
     onSelect: (Int) -> Unit,
 ): CouiBottomSheet {
     val dialog = CouiBottomSheet(context, title)
     val views = SheetChoicesBinding.inflate(LayoutInflater.from(dialog.context))
     views.choiceList.layoutManager = LinearLayoutManager(dialog.context)
     val checkTint = ColorStateList.valueOf(dialog.context.color(androidx.appcompat.R.attr.colorPrimary))
-    views.choiceList.adapter = object : RecyclerView.Adapter<ChoiceHolder>() {
-        override fun getItemCount() = entries.size
+    var visible = entries.indices.toList()
+    val adapter = object : RecyclerView.Adapter<ChoiceHolder>() {
+        override fun getItemCount() = visible.size
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
             ChoiceHolder(SheetChoiceRowBinding.inflate(parent.inflater, parent, false))
 
         override fun onBindViewHolder(holder: ChoiceHolder, position: Int) {
-            val chosen = position == selected
-            holder.views.choiceTitle.text = entries[position]
-            holder.views.choiceSummary.showMessage(summary(position))
+            val entry = visible[position]
+            val chosen = entry == selected
+            holder.views.choiceTitle.text = entries[entry]
+            holder.views.choiceSummary.showMessage(summary(entry))
+            holder.views.choiceIcon.isVisible = icon != null
+            icon?.invoke(entry, holder.views.choiceIcon)
             holder.views.choiceCheck.imageTintList = checkTint
             holder.views.choiceCheck.visibility = if (chosen) View.VISIBLE else View.INVISIBLE
             holder.views.root.isSelected = chosen
             holder.views.root.setOnClickListener {
                 dialog.dismiss()
-                onSelect(position)
+                onSelect(entry)
             }
+        }
+    }
+    views.choiceList.adapter = adapter
+    if (searchHint != null) {
+        views.searchBox.isVisible = true
+        views.search.hint = searchHint
+        // Keep the panel at its unfiltered height so it does not jump while typing.
+        views.choiceList.doOnLayout { it.minimumHeight = it.height }
+        views.search.doAfterTextChanged { text ->
+            val query = text?.toString()?.trim().orEmpty()
+            visible = entries.indices.filter { query.isEmpty() || entries[it].contains(query, ignoreCase = true) }
+            @Suppress("NotifyDataSetChanged")
+            adapter.notifyDataSetChanged()
         }
     }
     views.cancel.setOnClickListener { dialog.dismiss() }
