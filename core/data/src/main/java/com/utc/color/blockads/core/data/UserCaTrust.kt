@@ -51,13 +51,30 @@ object UserCaTrust {
     private fun read(context: Context, info: ApplicationInfo): Boolean? {
         val legacy = info.targetSdkVersion < Build.VERSION_CODES.N
         val app = context.createPackageContext(info.packageName, Context.CONTEXT_IGNORE_SECURITY)
-        val config =
-            app.assets.openXmlResourceParser("AndroidManifest.xml").use { manifest ->
-                manifestConfig(manifest, info.packageName) ?: return null
-            }
+        val config = baseManifestConfig(app, info.packageName) ?: return null
         if (config == 0) return legacy
         val debuggable = info.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         return app.resources.getXml(config).use { trustsUser(it, debuggable) } ?: legacy
+    }
+
+    /**
+     * The package context loads the framework, the base APK and every split, and each has its own
+     * `AndroidManifest.xml`. Opening it by name alone can return a split's manifest, whose
+     * `<application>` never carries `networkSecurityConfig` (Chrome ships six splits), so walk the
+     * asset cookies and read only the base APK's manifest.
+     */
+    private fun baseManifestConfig(app: Context, packageName: String): Int? {
+        for (cookie in 1..MaxCookies) {
+            val config =
+                runCatching {
+                        app.assets.openXmlResourceParser(cookie, "AndroidManifest.xml").use {
+                            manifestConfig(it, packageName)
+                        }
+                    }
+                    .getOrNull()
+            if (config != null) return config
+        }
+        return null
     }
 
     /** The `networkSecurityConfig` resource id (0 when absent), or null if this is another manifest. */
@@ -65,12 +82,20 @@ object UserCaTrust {
         while (parser.next() != XmlPullParser.END_DOCUMENT) {
             if (parser.eventType != XmlPullParser.START_TAG) continue
             when (parser.name) {
-                "manifest" -> if (parser.getAttributeValue(null, "package") != packageName) return null
+                "manifest" ->
+                    if (
+                        parser.getAttributeValue(null, "package") != packageName ||
+                            parser.getAttributeValue(null, "split") != null
+                    )
+                        return null
                 "application" -> return parser.getAttributeResourceValue(Android, "networkSecurityConfig", 0)
             }
         }
         return 0
     }
+
+    /** Framework, shared libraries, overlays, base and splits stay well below this. */
+    private const val MaxCookies = 64
 
     /**
      * Base-config trust anchors decide for every domain we would intercept. Null means the config

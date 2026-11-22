@@ -25,7 +25,8 @@ class UserCaTrustTest {
     // base-config trusts system only; user CAs only in debug-overrides of a release build.
     @Test fun googleGoRejectsUserCa() = check("com.google.android.apps.searchlite", false)
 
-    // base-config lists <certificates src="user"/>.
+    // base-config lists <certificates src="user"/>; Chrome 157 also ships six split APKs whose
+    // manifests have no networkSecurityConfig, which must not be read instead of the base one.
     @Test fun chromeTrustsUserCa() = check("com.android.chrome", true)
 
     @Test fun samsungInternetTrustsUserCa() = check("com.sec.android.app.sbrowser", true)
