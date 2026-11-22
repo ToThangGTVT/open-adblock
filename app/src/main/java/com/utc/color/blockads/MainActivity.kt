@@ -35,6 +35,7 @@ import com.utc.color.blockads.core.designsystem.Screen
 import com.utc.color.blockads.core.designsystem.color
 import com.utc.color.blockads.core.filter.CatalogSource
 import com.utc.color.blockads.databinding.ActivityMainBinding
+import com.utc.color.blockads.feature.apps.AppsMode
 import com.utc.color.blockads.feature.apps.AppsScreen
 import com.utc.color.blockads.feature.certificate.CertificateScreen
 import com.utc.color.blockads.feature.filters.FilterCatalogScreen
@@ -225,8 +226,15 @@ class MainActivity : ComponentActivity() {
                 this, host, state, vm.filters,
                 if (destination == Destination.Catalog) CatalogSource.Dns else CatalogSource.Browser,
             )
-            Destination.Firewall, Destination.Apps -> AppsScreen(this, host, state, vm.apps, vm.settings, destination == Destination.Firewall)
-            Destination.Certificate -> CertificateScreen(this, host, state, vm.certificates, vm.settings, vm.apps) { push(Destination.Apps) }
+            Destination.Firewall, Destination.Apps, Destination.HttpsApps -> AppsScreen(
+                this, host, state, vm.apps, vm.settings,
+                when (destination) {
+                    Destination.Firewall -> AppsMode.Firewall
+                    Destination.HttpsApps -> AppsMode.Https
+                    else -> AppsMode.Policy
+                },
+            )
+            Destination.Certificate -> CertificateScreen(this, host, state, vm.certificates, vm.settings, vm.apps) { push(Destination.HttpsApps) }
             Destination.Settings -> SettingsScreen(
                 this, host, state, vm.theme, vm::setTheme, vm.version, vm.error, vm.settings, vm.filters, vm.queries,
                 { push(Destination.Apps) }, { push(Destination.Certificate) },
@@ -312,6 +320,7 @@ private enum class Destination(val title: Int, val tabId: Int = 0) {
     Settings(Strings.string.settings, R.id.settings),
     Apps(Strings.string.apps),
     Certificate(Strings.string.https_filtering),
+    HttpsApps(Strings.string.add_apps),
     Catalog(Strings.string.dns_lists),
     BrowserCatalog(Strings.string.browser_filters),
     AppRequests(Strings.string.queries),

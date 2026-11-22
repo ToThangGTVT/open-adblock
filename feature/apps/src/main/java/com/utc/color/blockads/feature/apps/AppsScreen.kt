@@ -34,12 +34,14 @@ class AppsScreen private constructor(
     state: Bundle,
     private val repository: AppsRepository,
     private val settings: SettingsRepository,
-    private val firewallOnly: Boolean,
+    private val mode: AppsMode,
 ) : Screen(activity, views.root) {
     constructor(
         activity: ComponentActivity, parent: ViewGroup, state: Bundle, repository: AppsRepository,
-        settings: SettingsRepository, firewallOnly: Boolean,
-    ) : this(activity, ScreenAppsBinding.inflate(parent.inflater, parent, false), state, repository, settings, firewallOnly)
+        settings: SettingsRepository, mode: AppsMode,
+    ) : this(activity, ScreenAppsBinding.inflate(parent.inflater, parent, false), state, repository, settings, mode)
+
+    private val firewallOnly = mode == AppsMode.Firewall
 
     private var showSystem = state.getBoolean("system")
     private var apps = repository.apps.value
@@ -47,6 +49,7 @@ class AppsScreen private constructor(
     private var blocked = repository.blockedApps.value
     private var https = HttpsSettings()
     private var httpsUnsupported = repository.httpsUnsupported.value
+    private var httpsApps = repository.httpsApps.value
     private val modes = AppFilterMode.entries.map { context.getString(it.titleRes) }
     private val adapter = RowAdapter(
         key = { row: AppRow -> row.app.packageName },
@@ -60,6 +63,8 @@ class AppsScreen private constructor(
         views.appList.adapter = adapter
         views.help.isVisible = firewallOnly
         views.help.setOnClickListener { showHelp(it, Strings.string.firewall_help) }
+        // Only a handful of apps trust user CAs, and browsers such as Chrome are often system apps.
+        views.showSystem.root.isVisible = mode != AppsMode.Https
         views.search.setText(state.getString("search").orEmpty())
         views.search.doAfterTextChanged { render() }
         renderSystem()
@@ -73,6 +78,10 @@ class AppsScreen private constructor(
         }
         observe(repository.httpsUnsupported) {
             httpsUnsupported = it
+            render()
+        }
+        if (mode == AppsMode.Https) observe(repository.httpsApps) {
+            httpsApps = it
             render()
         }
     }
@@ -92,8 +101,9 @@ class AppsScreen private constructor(
         val search = views.search.text.toString()
         val blockedUids = resolveAppPolicy(apps, policies, blocked).blockedUids
         val uidCounts = apps.groupingBy { it.uid }.eachCount()
-        adapter.submitList(apps.filter {
-            (showSystem || !it.system) && (it.label.contains(search, true) || it.packageName.contains(search, true))
+        val source = if (mode == AppsMode.Https) httpsApps.orEmpty() else apps.filter { showSystem || !it.system }
+        adapter.submitList(source.filter {
+            it.label.contains(search, true) || it.packageName.contains(search, true)
         }.map {
             AppRow(it, it.uid in blockedUids, uidCounts.getValue(it.uid) > 1,
                 it.packageName in https.apps, it.packageName !in httpsUnsupported,
@@ -109,9 +119,9 @@ class AppsScreen private constructor(
         item.identity.root.showIcon(repository.cachedIcon(app.packageName))
         holder.icon = scope.launch { item.identity.root.showIcon(repository.icon(app.packageName)) }
         item.network.root.isVisible = firewallOnly
-        item.networkHint.isVisible = !firewallOnly && row.blocked
+        item.networkHint.isVisible = mode == AppsMode.Policy && row.blocked
         item.https.root.isVisible = !firewallOnly
-        item.policy.root.isVisible = !firewallOnly
+        item.policy.root.isVisible = mode == AppsMode.Policy
         if (firewallOnly) {
             item.network.root.bind(
                 context.getString(Strings.string.allow_network),
@@ -156,6 +166,16 @@ class AppsScreen private constructor(
         putBoolean("system", showSystem)
         putString("search", views.search.text.toString())
     }
+}
+
+/** Which per-app settings the list edits. */
+enum class AppsMode {
+    /** Filter policy and HTTPS filtering for every app. */
+    Policy,
+    /** Network access only. */
+    Firewall,
+    /** HTTPS filtering, listing only apps that trust user CAs. */
+    Https,
 }
 
 private class AppHolder(val views: RowAppBinding) : RecyclerView.ViewHolder(views.root) {

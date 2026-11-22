@@ -22,6 +22,13 @@ class AppsRepository(context: Context, private val settings: SettingsRepository)
 
     /** Apps that only trust system CAs; HTTPS filtering would break every site they open. */
     val httpsUnsupported = _httpsUnsupported.asStateFlow()
+    private val _httpsApps = MutableStateFlow<List<InstalledApp>?>(null)
+
+    /**
+     * Apps that trust user CAs and so can be HTTPS-filtered; null until the first check ends. Set
+     * together with [httpsUnsupported], so a newly installed app never shows before it is checked.
+     */
+    val httpsApps = _httpsApps.asStateFlow()
     val policies = settings.appPolicies.stateIn(scope, SharingStarted.Eagerly, emptyMap())
     val blockedApps = settings.blockedApps.stateIn(scope, SharingStarted.Eagerly, emptySet())
     private val cache =
@@ -71,11 +78,9 @@ class AppsRepository(context: Context, private val settings: SettingsRepository)
                         compareBy<InstalledApp> { it.system }
                             .thenBy(String.CASE_INSENSITIVE_ORDER) { it.label }
                     )
-            _httpsUnsupported.value =
-                _apps.value
-                    .map { it.packageName }
-                    .filterNot { UserCaTrust.trusts(context, it) }
-                    .toSet()
+            val (trusting, unsupported) = _apps.value.partition { UserCaTrust.trusts(context, it.packageName) }
+            _httpsUnsupported.value = unsupported.map { it.packageName }.toSet()
+            _httpsApps.value = trusting
         }
     }
 
