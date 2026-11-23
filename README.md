@@ -25,7 +25,7 @@ Once Home shows **Protecting**, you can use your device as usual.
 
 | Screen | What you can do |
 | --- | --- |
-| **Home** | Turn protection on or off and view blocking statistics. |
+| **Home** | Turn protection on or off, view blocking statistics, and try **Goodbye DPI** (experimental). |
 | **Log** | Inspect connections, search domains, and quickly block or allow them. |
 | **Filters** | Choose and update filter lists or add custom rules. |
 | **Firewall** | Allow or block network access for individual apps while the VPN is on. |

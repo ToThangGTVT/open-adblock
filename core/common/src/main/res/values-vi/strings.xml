@@ -395,6 +395,22 @@
     <string name="home_dns_protection">Bảo vệ DNS</string>
     <string name="home_https_protection">Bảo vệ HTTPS</string>
     <string name="home_dns_description">Chặn quảng cáo bằng DNS</string>
+    <string name="home_dpi_bypass" translatable="false">Goodbye DPI</string>
+    <string name="home_dpi_description">Tính năng thử nghiệm</string>
+    <string name="home_dpi_options">Tùy chỉnh Goodbye DPI</string>
+    <string name="dpi_sites_invalid">Nhập tên trang hợp lệ, mỗi dòng một tên</string>
+    <string name="dpi_mode">Chế độ</string>
+    <string name="dpi_mode_basic">Tiêu chuẩn</string>
+    <string name="dpi_mode_basic_hint">Tách nhỏ yêu cầu và che tên trang. Ổn định, nhanh.</string>
+    <string name="dpi_mode_strong">Mạnh</string>
+    <string name="dpi_mode_strong_hint">Gửi thêm gói mồi và đảo thứ tự gói. Dùng khi Tiêu chuẩn không đủ.</string>
+    <string name="dpi_mode_custom">Tùy chỉnh</string>
+    <string name="dpi_fake_ttl_value">Độ xa gói mồi: %1$d</string>
+    <string name="dpi_fake_ttl_hint">Nếu bật Mạnh mà trang không vào được, hãy giảm số này.</string>
+    <string name="dpi_section_sites">Chỉ áp dụng cho các trang</string>
+    <string name="dpi_sites_hint">Để trống để áp dụng cho mọi trang. Mỗi dòng một tên trang, ví dụ youtube.com.</string>
+    <string name="dpi_sites">Tên trang</string>
+    <string name="dpi_sites_saved">Đã lưu danh sách trang</string>
     <string name="home_https_description">Chặn quảng cáo trong trình duyệt</string>
     <string name="expand_dashboard">Mở rộng bảng điều khiển</string>
     <string name="collapse_dashboard">Thu gọn bảng điều khiển</string>

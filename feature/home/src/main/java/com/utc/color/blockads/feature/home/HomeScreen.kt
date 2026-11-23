@@ -12,7 +12,9 @@ import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.utc.color.blockads.core.certificate.CertificateRepository
+import com.utc.color.blockads.core.common.DpiSettings
 import com.utc.color.blockads.core.common.FilterStatus
+import com.utc.color.blockads.core.common.label
 import com.utc.color.blockads.core.common.HttpsSettings
 import com.utc.color.blockads.core.common.TunnelState
 import com.utc.color.blockads.core.common.TunnelStatus
@@ -20,6 +22,7 @@ import com.utc.color.blockads.core.common.userMessage
 import com.utc.color.blockads.core.data.QueryLogRepository
 import com.utc.color.blockads.core.data.SettingsRepository
 import com.utc.color.blockads.core.data.TopDomain
+import com.utc.color.blockads.core.designsystem.PreferenceIcon
 import com.utc.color.blockads.core.designsystem.Screen
 import com.utc.color.blockads.core.designsystem.button
 import com.utc.color.blockads.core.designsystem.card
@@ -45,21 +48,22 @@ class HomeScreen private constructor(
     tunnel: StateFlow<TunnelState>,
     filter: StateFlow<FilterStatus>,
     queries: QueryLogRepository,
-    settings: SettingsRepository,
+    private val settings: SettingsRepository,
     private val certificates: CertificateRepository,
     private val onProtection: (Boolean) -> Unit,
     private val onCertificate: () -> Unit,
     onSettings: () -> Unit,
     private val onPrivateDns: () -> Unit,
+    onDpiOptions: () -> Unit,
 ) : Screen(activity, views.root) {
     constructor(
         activity: ComponentActivity, parent: ViewGroup, state: Bundle,
         tunnel: StateFlow<TunnelState>, filter: StateFlow<FilterStatus>, queries: QueryLogRepository,
         settings: SettingsRepository, certificates: CertificateRepository, onProtection: (Boolean) -> Unit,
-        onCertificate: () -> Unit, onSettings: () -> Unit, onPrivateDns: () -> Unit,
+        onCertificate: () -> Unit, onSettings: () -> Unit, onPrivateDns: () -> Unit, onDpiOptions: () -> Unit,
     ) : this(
         activity, ScreenHomeBinding.inflate(parent.inflater, parent, false), state, tunnel, filter,
-        queries, settings, certificates, onProtection, onCertificate, onSettings, onPrivateDns,
+        queries, settings, certificates, onProtection, onCertificate, onSettings, onPrivateDns, onDpiOptions,
     )
 
     private val behavior = BottomSheetBehavior.from(views.homePanel)
@@ -73,6 +77,7 @@ class HomeScreen private constructor(
     private var status = tunnel.value
     private var filters = filter.value
     private var https = HttpsSettings()
+    private var dpi = DpiSettings()
     private var busy = false
     /** Forest gradient while protecting, cross-fading to deep red while off. */
     private val background = TransitionDrawable(arrayOf(
@@ -134,6 +139,12 @@ class HomeScreen private constructor(
         observe(tunnel) { status = it; renderProtection() }
         observe(filter) { filters = it; renderProtection() }
         observe(settings.https) { https = it; renderProtection() }
+        observe(settings.dpi) {
+            dpi = it
+            renderProtection()
+            views.dpiOptions.root.bind(context.getString(Strings.string.home_dpi_options),
+                context.getString(it.mode.label), trailingIcon = PreferenceIcon.Arrow, action = onDpiOptions)
+        }
         observe(certificates.state) { renderProtection() }
         observe(queries.today) {
             views.blockedMetric.value.text = number.format(it.blocked)
@@ -227,6 +238,12 @@ class HomeScreen private constructor(
             checked = httpsOn, enabled = !busy && canToggle,
         ) { setHttps(!httpsOn) }
 
+        val dpiOn = dpi.enabled && checked && canToggle
+        views.dpiBypass.root.bind(
+            context.getString(Strings.string.home_dpi_bypass), context.getString(Strings.string.home_dpi_description),
+            checked = dpiOn, enabled = !busy && canToggle,
+        ) { setDpiBypass(!dpiOn) }
+
         views.notices.removeAllViews()
         listOfNotNull(error, status.detail, filters.error).forEach { views.notices.card().hint(it) }
         if (status.privateDns) views.notices.card().apply {
@@ -256,6 +273,23 @@ class HomeScreen private constructor(
                 certificates.setEnabled(enabled)
                 if (enabled && status.status !in running) onProtection(true)
             }
+        }
+    }
+
+    private fun setDpiBypass(enabled: Boolean) {
+        busy = true
+        error = null
+        renderProtection()
+        action(
+            success = { busy = false; renderProtection() },
+            failure = {
+                busy = false
+                error = it.userMessage(resources) ?: context.getString(Strings.string.action_failed)
+                renderProtection()
+            },
+        ) {
+            settings.updateDpi { it.copy(enabled = enabled) }
+            if (enabled && status.status !in running) onProtection(true)
         }
     }
 

@@ -165,6 +165,21 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         store.edit { it[BlockQuic] = enabled }
     }
 
+    /** GoodbyeDPI-style circumvention. Off by default. */
+    val dpi = preferences.map { DpiSettings.fromJson(it[Dpi]) }.distinctUntilChanged()
+
+    suspend fun setDpi(value: DpiSettings) {
+        val json = value.validated().toJson().toString()
+        store.edit { it[Dpi] = json }
+    }
+
+    /** Read-modify-write, so quick toggles do not overwrite each other. */
+    suspend fun updateDpi(change: (DpiSettings) -> DpiSettings) {
+        store.edit { prefs ->
+            prefs[Dpi] = change(DpiSettings.fromJson(prefs[Dpi])).validated().toJson().toString()
+        }
+    }
+
     suspend fun setAppMode(packages: List<String>, mode: AppFilterMode) {
         store.edit { prefs ->
             val policies = parsePolicies(prefs[AppPolicies]).toMutableMap()
@@ -313,6 +328,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         require(retention in listOf(1, 7, 30)) { localizedError(L10n.string.retention_invalid) }
         if (json.has(Lists.name)) org.json.JSONArray(json.getString(Lists.name))
         if (json.has(AppPolicies.name)) org.json.JSONObject(json.getString(AppPolicies.name))
+        if (json.has(Dpi.name)) DpiSettings.fromJson(json.getString(Dpi.name)).validated()
         parseBlockedApps(if (json.has(BlockedApps.name)) json.getString(BlockedApps.name) else null)
         val lists = parseLists(json.optString(Lists.name).takeIf { it.isNotBlank() })
         require(lists.size <= 30) { localizedError(L10n.string.filter_list_limit) }
@@ -412,6 +428,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
         val AppPolicies = stringPreferencesKey("app_policies")
         val BlockedApps = stringPreferencesKey("blocked_apps")
         val BlockQuic = booleanPreferencesKey("block_quic")
+        val Dpi = stringPreferencesKey("goodbye_dpi")
         val CustomRules = stringPreferencesKey("custom_rules")
         val Upstream = stringPreferencesKey("dns_upstream")
         val BlockMode = stringPreferencesKey("dns_block_mode")
@@ -429,6 +446,7 @@ class SettingsRepository(private val store: DataStore<Preferences>) {
                 BlockedApps,
                 CustomDnsUrl,
                 CustomDnsIp,
+                Dpi,
             )
         val boolKeys = listOf(AutoStart, Ipv6, BypassLan, Logging, BlockQuic, LiveUpdates)
     }

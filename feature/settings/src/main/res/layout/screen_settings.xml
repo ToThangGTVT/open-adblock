@@ -29,6 +29,7 @@
             <include android:id="@+id/ipv6" layout="@layout/preference_row" />
             <include android:id="@+id/bypass_lan" layout="@layout/preference_row" />
             <include android:id="@+id/block_quic" layout="@layout/preference_row" />
+            <include android:id="@+id/goodbye_dpi" layout="@layout/preference_row" />
             <include android:id="@+id/apps" layout="@layout/preference_row" />
             <include android:id="@+id/https_filtering" layout="@layout/preference_row" />
             <include android:id="@+id/always_on" layout="@layout/preference_row" />

@@ -20,6 +20,7 @@ import com.utc.color.blockads.core.common.BlockResponse
 import com.utc.color.blockads.core.common.DnsSettings
 import com.utc.color.blockads.core.common.DnsUpstream
 import com.utc.color.blockads.core.common.ThemeMode
+import com.utc.color.blockads.core.common.label
 import com.utc.color.blockads.core.common.userMessage
 import com.utc.color.blockads.core.data.QueryLogRepository
 import com.utc.color.blockads.core.data.SettingsRepository
@@ -49,14 +50,16 @@ class SettingsScreen private constructor(
     private val queries: QueryLogRepository,
     onApps: () -> Unit,
     onCertificate: () -> Unit,
+    onDpi: () -> Unit,
 ) : Screen(activity, views.root) {
     constructor(
         activity: ComponentActivity, parent: ViewGroup, state: Bundle, theme: StateFlow<ThemeMode>, onTheme: (ThemeMode) -> Unit,
         engineVersion: StateFlow<String>, error: StateFlow<String?>, settings: SettingsRepository,
         filters: FilterRepository, queries: QueryLogRepository, onApps: () -> Unit, onCertificate: () -> Unit,
+        onDpi: () -> Unit,
     ) : this(
         activity, ScreenSettingsBinding.inflate(parent.inflater, parent, false), state, theme, onTheme, engineVersion,
-        error, settings, filters, queries, onApps, onCertificate,
+        error, settings, filters, queries, onApps, onCertificate, onDpi,
     )
 
     private val locale = context.getSystemService(LocaleManager::class.java)
@@ -156,6 +159,10 @@ class SettingsScreen private constructor(
             toggle(views.bypassLan.root, context.getString(Strings.string.bypass_lan), Strings.string.bypass_lan_hint, it) {
                 settings.setBypassLan(!it)
             }
+        }
+        observe(settings.dpi) {
+            views.goodbyeDpi.root.bind(context.getString(Strings.string.home_dpi_bypass),
+                context.getString(it.mode.label), trailingIcon = PreferenceIcon.Arrow, action = onDpi)
         }
         observe(settings.blockQuic) {
             toggle(views.blockQuic.root, context.getString(Strings.string.block_quic), Strings.string.block_quic_hint, it) {

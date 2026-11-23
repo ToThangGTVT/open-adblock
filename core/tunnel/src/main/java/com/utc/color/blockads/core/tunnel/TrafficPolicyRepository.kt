@@ -33,9 +33,8 @@ class TrafficPolicyRepository(
                     apps.apps.filter { it.isNotEmpty() },
                     settings.appPolicies,
                     settings.blockedApps,
-                    settings.blockQuic,
-                    settings.ipv6,
-                ) { installed, policies, blockedApps, blockQuic, ipv6 ->
+                    combine(settings.blockQuic, settings.ipv6, settings.dpi, ::Triple),
+                ) { installed, policies, blockedApps, (blockQuic, ipv6, dpi) ->
                     val resolved = resolveAppPolicy(installed, policies, blockedApps)
                     val packages = JSONObject()
                     installed
@@ -46,6 +45,7 @@ class TrafficPolicyRepository(
                     JSONObject()
                         .put("blockQuic", blockQuic)
                         .put("ipv6", ipv6)
+                        .put("dpi", dpi.toJson())
                         .put("packages", packages)
                         .put("bypassUids", JSONArray(resolved.bypassUids))
                         .put("blockedUids", JSONArray(resolved.blockedUids))

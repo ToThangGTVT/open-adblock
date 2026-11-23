@@ -43,6 +43,7 @@ import com.utc.color.blockads.feature.filters.FiltersScreen
 import com.utc.color.blockads.feature.home.HomeScreen
 import com.utc.color.blockads.feature.querylog.AppRequestsScreen
 import com.utc.color.blockads.feature.querylog.QueryLogScreen
+import com.utc.color.blockads.feature.settings.DpiScreen
 import com.utc.color.blockads.feature.settings.SettingsScreen
 import com.utc.color.blockads.core.tunnel.BlockAdsTileService
 import dagger.hilt.android.AndroidEntryPoint
@@ -214,6 +215,7 @@ class MainActivity : ComponentActivity() {
                 vm.certificates, ::setProtection, { push(Destination.Certificate) },
                 { selectTab(Destination.Settings) },
                 { startActivity(Intent(android.provider.Settings.ACTION_WIRELESS_SETTINGS)) },
+                { push(Destination.Dpi) },
             )
             Destination.Log -> QueryLogScreen(this, host, state, vm.queries, vm.filters, vm.settings, vm.apps) { uid, label ->
                 push(Destination.AppRequests, uid, label)
@@ -237,8 +239,11 @@ class MainActivity : ComponentActivity() {
             Destination.Certificate -> CertificateScreen(this, host, state, vm.certificates, vm.settings, vm.apps) { push(Destination.HttpsApps) }
             Destination.Settings -> SettingsScreen(
                 this, host, state, vm.theme, vm::setTheme, vm.version, vm.error, vm.settings, vm.filters, vm.queries,
-                { push(Destination.Apps) }, { push(Destination.Certificate) },
+                { push(Destination.Apps) }, { push(Destination.Certificate) }, { push(Destination.Dpi) },
             )
+            Destination.Dpi -> DpiScreen(this, host, state, vm.settings) {
+                if (vm.tunnel.state.value.status !in protecting) setProtection(true)
+            }
         }.also {
             host.addView(it.view)
             it.restoreViews(state)
@@ -324,6 +329,7 @@ private enum class Destination(val title: Int, val tabId: Int = 0) {
     Catalog(Strings.string.dns_lists),
     BrowserCatalog(Strings.string.browser_filters),
     AppRequests(Strings.string.queries),
+    Dpi(Strings.string.home_dpi_bypass),
 }
 
 private data class Page(

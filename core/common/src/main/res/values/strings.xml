@@ -411,6 +411,22 @@
     <string name="home_dns_protection">DNS protection</string>
     <string name="home_https_protection">HTTPS protection</string>
     <string name="home_dns_description">Block ads using DNS</string>
+    <string name="home_dpi_bypass" translatable="false">Goodbye DPI</string>
+    <string name="home_dpi_description">Experimental feature</string>
+    <string name="home_dpi_options">Goodbye DPI options</string>
+    <string name="dpi_sites_invalid">Enter valid site names, one per line</string>
+    <string name="dpi_mode">Mode</string>
+    <string name="dpi_mode_basic">Standard</string>
+    <string name="dpi_mode_basic_hint">Splits each request and disguises the site name. Stable and fast.</string>
+    <string name="dpi_mode_strong">Strong</string>
+    <string name="dpi_mode_strong_hint">Also sends a decoy and reorders the pieces. Use it if Standard is not enough.</string>
+    <string name="dpi_mode_custom">Custom</string>
+    <string name="dpi_fake_ttl_value">Decoy distance: %1$d</string>
+    <string name="dpi_fake_ttl_hint">If sites stop loading in Strong mode, lower this number.</string>
+    <string name="dpi_section_sites">Only for these sites</string>
+    <string name="dpi_sites_hint">Leave empty to apply to every site. One site per line, for example youtube.com.</string>
+    <string name="dpi_sites">Sites</string>
+    <string name="dpi_sites_saved">Site list saved</string>
     <string name="home_https_description">Block ads in your browser</string>
     <string name="expand_dashboard">Expand dashboard</string>
     <string name="collapse_dashboard">Collapse dashboard</string>

@@ -1,0 +1,86 @@
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:id="@+id/page_list" android:fillViewport="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        style="@style/BlockAds.PageColumn">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/feedback"
+            android:textAppearance="@style/BlockAds.Hint"
+            android:padding="12dp"
+            android:visibility="gone" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            style="@style/BlockAds.CardColumn">
+            <include android:id="@+id/dpi_enabled" layout="@layout/preference_row" />
+            <include android:id="@+id/dpi_mode" layout="@layout/preference_row" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/fake_ttl"
+                android:orientation="vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/fake_ttl_label"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
+                <com.google.android.material.slider.Slider
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/fake_ttl_slider"
+                    android:stepSize="1"
+                    android:valueFrom="1"
+                    android:valueTo="12"
+                    app:labelBehavior="floating" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dpi_fake_ttl_hint"
+                    android:textAppearance="@style/BlockAds.Hint" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/dpi_section_sites"
+            android:textAppearance="@style/BlockAds.Title"
+            android:accessibilityHeading="true"
+            android:padding="12dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            style="@style/BlockAds.CardColumn">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/dpi_sites_hint"
+                android:textAppearance="@style/BlockAds.Hint"
+                android:padding="12dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingBottom="12dp">
+                <include android:id="@+id/sites" layout="@layout/form_input" />
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/save_sites"
+                    android:text="@string/save" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

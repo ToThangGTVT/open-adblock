@@ -163,6 +163,8 @@
                     android:orientation="vertical">
                     <include android:id="@+id/dns_protection" layout="@layout/preference_row" />
                     <include android:id="@+id/https_protection" layout="@layout/preference_row" />
+                    <include android:id="@+id/dpi_bypass" layout="@layout/preference_row" />
+                    <include android:id="@+id/dpi_options" layout="@layout/preference_row" />
                 </LinearLayout>
                 <LinearLayout
                     android:id="@+id/statistics"
