@@ -29,6 +29,9 @@ dependencyResolutionManagement {
 
 rootProject.name = "BlockAds"
 
+// Java API of the native core (git submodule, https://github.com/ToThangGTVT/open-adblock-core).
+includeBuild("open-adblock-core/bindings/java")
+
 include(":app")
 
 include(

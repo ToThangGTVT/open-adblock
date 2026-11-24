@@ -1,19 +1,23 @@
-# JNI name resolution must survive shrinking and obfuscation.
--keepclasseswithmembernames,includedescriptorclasses class * {
+# The core's own rules ship in its jar (META-INF/proguard/openadblock-core.pro). Repeated here so
+# shrinking stays correct even if a build path skips jar-embedded rules: JNI resolves natives and
+# callback methods by name.
+-keepclasseswithmembernames,includedescriptorclasses class io.github.tothanggtvt.openadblock.core.NativeBindings {
     native <methods>;
 }
--keep interface com.utc.color.blockads.core.enginebridge.SocketProtector { *; }
--keepclassmembers class * implements com.utc.color.blockads.core.enginebridge.SocketProtector {
+-keep interface io.github.tothanggtvt.openadblock.core.SocketProtector { *; }
+-keepclassmembers class * implements io.github.tothanggtvt.openadblock.core.SocketProtector {
     public boolean protect(int);
     public int connectionOwner(int, java.lang.String, int, java.lang.String, int);
 }
-
--keep interface com.utc.color.blockads.core.enginebridge.DnsEventSink { *; }
--keepclassmembers class * implements com.utc.color.blockads.core.enginebridge.DnsEventSink {
-    public void onDnsEvents(java.lang.String);
+-keep interface io.github.tothanggtvt.openadblock.core.EngineEventListener { *; }
+-keepclassmembers class * implements io.github.tothanggtvt.openadblock.core.EngineEventListener {
+    public void onEvents(java.lang.String);
 }
-
--keep interface com.utc.color.blockads.core.enginebridge.RootCaSigner { *; }
--keepclassmembers class * implements com.utc.color.blockads.core.enginebridge.RootCaSigner {
+-keep interface io.github.tothanggtvt.openadblock.core.CertificateSigner { *; }
+-keepclassmembers class * implements io.github.tothanggtvt.openadblock.core.CertificateSigner {
     public byte[] sign(byte[]);
+}
+-keep interface io.github.tothanggtvt.openadblock.core.PacketSink { *; }
+-keepclassmembers class * implements io.github.tothanggtvt.openadblock.core.PacketSink {
+    public void onPacket(byte[]);
 }

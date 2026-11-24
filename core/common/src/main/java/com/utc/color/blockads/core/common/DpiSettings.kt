@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * GoodbyeDPI-style circumvention, applied by the native engine (`nativecore/src/dpi.rs`).
+ * GoodbyeDPI-style circumvention, applied by the native engine (`open-adblock-core/crates/engine/src/dpi.rs`).
  * Each field names the GoodbyeDPI flag it mirrors.
  */
 data class DpiSettings(

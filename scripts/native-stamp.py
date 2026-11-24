@@ -1,19 +1,35 @@
 #!/usr/bin/env python3
-"""Content fingerprint and JNI export verification for Android native packaging."""
+"""Content fingerprint and JNI export verification for Android native packaging.
+
+The file list must match `verifyNativeCore` in core/engine-bridge/build.gradle.kts exactly.
+"""
 import argparse
 import hashlib
 from pathlib import Path
-import re
 import subprocess
+
+CORE = "open-adblock-core"
+LIBRARY = "libopenadblock_jni.so"
+ABIS = ["arm64-v8a", "armeabi-v7a", "x86_64", "x86"]
 
 
 def source_files(root):
-    fixed = ["nativecore/Cargo.toml", "nativecore/Cargo.lock", "rust-toolchain.toml",
-             "scripts/build-native.sh", "scripts/native-stamp.py",
-             "core/engine-bridge/src/main/java/com/utc/color/blockads/core/enginebridge/EngineBridge.kt"]
-    vendored = [p for p in (root / "nativecore/vendor").rglob("*")
+    core = root / CORE
+    fixed = [f"{CORE}/Cargo.toml", f"{CORE}/Cargo.lock", f"{CORE}/rust-toolchain.toml",
+             f"{CORE}/scripts/build-android.sh", f"{CORE}/scripts/check-jni-exports.py",
+             "scripts/build-native.sh", "scripts/native-stamp.py"]
+    crates = [p for p in (core / "crates").rglob("*")
+              if p.is_file() and (p.suffix in (".rs", ".js") or p.name == "Cargo.toml")
+              and not {"tests", "benches"} & set(p.relative_to(core / "crates").parts[:-1])]
+    vendored = [p for p in (core / "vendor").rglob("*")
                 if p.is_file() and (p.suffix == ".rs" or p.name == "Cargo.toml")]
-    return sorted([root / name for name in fixed] + list((root / "nativecore/src").rglob("*.rs")) + list((root / "nativecore/src").rglob("*.js")) + vendored, key=lambda p: p.relative_to(root).as_posix())
+    java = [p for p in (core / "bindings/java/src/main").rglob("*")
+            if p.is_file() and p.suffix in (".java", ".pro")]
+    missing = [name for name in fixed if not (root / name).is_file()]
+    if missing:
+        raise SystemExit(f"Missing {', '.join(missing)}; run `git submodule update --init`.")
+    return sorted([root / name for name in fixed] + crates + vendored + java,
+                  key=lambda p: p.relative_to(root).as_posix())
 
 
 def fingerprint(root):
@@ -40,23 +56,17 @@ def main():
         return
     if current != args.expected:
         raise SystemExit("Rust/JNI sources changed during the native build; rebuild before packaging.")
-    bridge = root / "core/engine-bridge/src/main/java/com/utc/color/blockads/core/enginebridge/EngineBridge.kt"
-    methods = set(re.findall(r"external\s+fun\s+(native\w+)", bridge.read_text()))
-    expected = {"Java_com_utc_color_blockads_core_enginebridge_EngineBridge_" + name for name in methods}
     directory = root / "core/engine-bridge/src/main/jniLibs"
+    binaries = [directory / abi / LIBRARY for abi in ABIS]
+    subprocess.check_call(["python3", str(root / CORE / "scripts/check-jni-exports.py"),
+                           "--nm", str(args.ndk_bin / "llvm-nm"), *map(str, binaries)])
     lines = ["sources=" + current]
-    for abi in ["arm64-v8a", "armeabi-v7a", "x86_64", "x86"]:
-        binary = directory / abi / "libblockads_core.so"
-        output = subprocess.check_output([str(args.ndk_bin / "llvm-nm"), "-D", str(binary)], text=True)
-        exports = {line.split()[-1] for line in output.splitlines() if line.split()}
-        missing = expected - exports
-        if missing:
-            raise SystemExit(f"Missing JNI exports for {abi}: {', '.join(sorted(missing))}")
-        lines.append(abi + "=" + hashlib.sha256(binary.read_bytes()).hexdigest())
+    lines += [abi + "=" + hashlib.sha256(binary.read_bytes()).hexdigest()
+              for abi, binary in zip(ABIS, binaries)]
     temporary = directory / ".build.properties.tmp"
     temporary.write_text("\n".join(lines) + "\n")
     temporary.replace(directory / ".build.properties")
-    print("Verified source fingerprint, four ABI binaries and every EngineBridge JNI export.")
+    print("Verified source fingerprint, four ABI binaries and every NativeBindings JNI export.")
 
 
 if __name__ == "__main__":

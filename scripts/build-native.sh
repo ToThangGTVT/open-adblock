@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Builds the open-adblock-core JNI library for the four Android ABIs into
+# core/engine-bridge/src/main/jniLibs and seals the stamp that verifyNativeCore checks.
 set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}"
@@ -9,26 +11,12 @@ case "$(uname -s)" in
     *) echo 'Use macOS or Linux to build Android native libraries.' >&2; exit 1 ;;
 esac
 NDK_BIN="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$NDK_HOST/bin"
-command -v cargo >/dev/null || { echo 'Install Rust via rustup and add cargo to PATH.' >&2; exit 1; }
-[[ -d "$NDK_BIN" ]] || { echo "Missing NDK toolchain: $NDK_BIN" >&2; exit 1; }
 cd "$PROJECT_DIR"
+[[ -f open-adblock-core/Cargo.toml ]] || git submodule update --init open-adblock-core
+JNI_LIBS="$PROJECT_DIR/core/engine-bridge/src/main/jniLibs"
 source_fingerprint="$(python3 scripts/native-stamp.py --root "$PROJECT_DIR")"
-rm -f core/engine-bridge/src/main/jniLibs/.build.properties
-for spec in \
-    'aarch64-linux-android:arm64-v8a:aarch64-linux-android' \
-    'armv7-linux-androideabi:armeabi-v7a:armv7a-linux-androideabi' \
-    'x86_64-linux-android:x86_64:x86_64-linux-android' \
-    'i686-linux-android:x86:i686-linux-android'; do
-    IFS=: read -r rust_target android_abi clang_target <<< "$spec"
-    linker_key="CARGO_TARGET_$(echo "$rust_target" | tr '[:lower:]-' '[:upper:]_')_LINKER"
-    compiler_key="CC_$(echo "$rust_target" | tr '-' '_')"
-    archive_key="AR_$(echo "$rust_target" | tr '-' '_')"
-    env "$compiler_key=$NDK_BIN/${clang_target}33-clang" "$archive_key=$NDK_BIN/llvm-ar" "$linker_key=$NDK_BIN/${clang_target}33-clang" \
-        RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384" \
-        cargo build --manifest-path nativecore/Cargo.toml --locked --release --target "$rust_target"
-    output="$PROJECT_DIR/core/engine-bridge/src/main/jniLibs/$android_abi"
-    mkdir -p "$output"
-    cp "nativecore/target/$rust_target/release/libblockads_core.so" "$output/"
-done
-
+rm -f "$JNI_LIBS/.build.properties"
+# Library name before the core moved to its own repository; never package it next to the new one.
+rm -f "$JNI_LIBS"/*/libblockads_core.so
+ANDROID_MIN_SDK=33 bash open-adblock-core/scripts/build-android.sh "$JNI_LIBS"
 python3 scripts/native-stamp.py --root "$PROJECT_DIR" --seal --expected "$source_fingerprint" --ndk-bin "$NDK_BIN"

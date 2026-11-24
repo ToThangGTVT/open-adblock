@@ -308,7 +308,7 @@ Reviewed from Cargo.lock manifests, including host/target-specific crates.
 | tracing | 0.1 (locked by Cargo.lock) | MIT | https://github.com/tokio-rs/tracing |
 
 netstack-smoltcp and smoltcp license texts are in licenses/. The locally patched
-netstack-smoltcp source is in nativecore/vendor/netstack-smoltcp; modification
+netstack-smoltcp source is in open-adblock-core/vendor/netstack-smoltcp; modification
 notes are in BLOCKADS_PATCHES.md there. No Go/gVisor/lwIP implementation is linked. Upstream tracing is disabled at compile time so no
 packet payload can be printed by netstack diagnostic calls.
 

@@ -17,7 +17,8 @@
 .kotlin/
 local.properties
 
-nativecore/target/
+# Legacy build cache from before the core moved to open-adblock-core/.
+nativecore/
 core/engine-bridge/src/main/jniLibs/
 /dist/
 *.jks

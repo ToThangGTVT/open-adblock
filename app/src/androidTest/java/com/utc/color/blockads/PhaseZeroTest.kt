@@ -27,9 +27,9 @@ class PhaseZeroTest {
         }
         val originalTheme = runBlocking { model.settings.theme.first() }
         try {
-            assertEquals("0.5.0-phase5", EngineBridge().version())
+            assertEquals("0.6.0", EngineBridge().version())
             openTab("settings")
-            scrollToText("page_list", "Rust JNI · 0.5.0-phase5")
+            scrollToText("page_list", "Rust JNI · 0.6.0")
             val modes = listOf(appString(L10n.string.theme_light), appString(L10n.string.theme_dark),
                 "Monet", appString(L10n.string.follow_system))
             val values = listOf(

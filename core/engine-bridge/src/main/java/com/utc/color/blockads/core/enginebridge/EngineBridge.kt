@@ -2,60 +2,55 @@ package com.utc.color.blockads.core.enginebridge
 
 import com.utc.color.blockads.core.common.R as L10n
 import com.utc.color.blockads.core.common.localizedError
-class EngineBridge {
-    fun supportsHttps(): Boolean =
-        try {
-            nativeHttpsApiVersion() == 1
-        } catch (_: UnsatisfiedLinkError) {
-            false
-        }
+import io.github.tothanggtvt.openadblock.core.AdBlockEngine
+import io.github.tothanggtvt.openadblock.core.CertificateSigner
+import io.github.tothanggtvt.openadblock.core.EngineEventListener
+import io.github.tothanggtvt.openadblock.core.NativeEngine
 
-    private external fun nativeHttpsApiVersion(): Int
+/** Host-side callback types come from the core's Java API (open-adblock-core/bindings/java). */
+typealias SocketProtector = io.github.tothanggtvt.openadblock.core.SocketProtector
+
+typealias DnsEventSink = EngineEventListener
+
+typealias RootCaSigner = CertificateSigner
+
+/**
+ * The app's view of the native core: Android defaults and localized errors on top of
+ * [AdBlockEngine]. All engine logic lives in open-adblock-core; keep this class thin.
+ */
+class EngineBridge(private val core: AdBlockEngine = NativeEngine.get()) {
+    fun supportsHttps(): Boolean = core.apiVersion() >= 1
 
     fun generateCa(signer: RootCaSigner, publicPoint: ByteArray): ByteArray =
-        nativeGenerateCa(signer, publicPoint) ?: error(localizedError(L10n.string.ca_create_failed))
+        core.generateRootCa(signer, publicPoint) ?: error(localizedError(L10n.string.ca_create_failed))
 
+    /** A null [signer] removes the root CA. */
     fun setCa(
         signer: RootCaSigner?,
         publicPoint: ByteArray = byteArrayOf(),
         certificate: ByteArray = byteArrayOf(),
-    ): Boolean = nativeSetCa(signer, publicPoint, certificate)
+    ): Boolean =
+        if (signer == null) {
+            core.clearRootCa()
+            true
+        } else {
+            core.setRootCa(signer, publicPoint, certificate)
+        }
 
-    fun configureHttps(json: String): Boolean = nativeConfigureHttps(json)
+    fun configureHttps(json: String): Boolean = core.configureHttps(json)
 
-    private external fun nativeGenerateCa(signer: RootCaSigner, publicPoint: ByteArray): ByteArray?
-
-    private external fun nativeSetCa(
-        signer: RootCaSigner?,
-        publicPoint: ByteArray,
-        certificate: ByteArray,
-    ): Boolean
-
-    private external fun nativeConfigureHttps(json: String): Boolean
-
-    fun configurePolicy(json: String): Boolean = nativeConfigurePolicy(json)
-
-    private external fun nativeConfigurePolicy(json: String): Boolean
+    fun configurePolicy(json: String): Boolean = core.configurePolicy(json)
 
     /** DNS lists feed only the domain matcher; browser lists only decrypted HTTPS. */
     fun replaceRules(dns: String, browser: String, custom: String, apply: Boolean = true): String =
-        nativeReplaceRules(dns, browser, custom, apply)
+        core.replaceRules(dns, browser, custom, apply)
 
-    fun configureDns(json: String): Boolean = nativeConfigureDns(json)
+    fun configureDns(json: String): Boolean = core.configureDns(json)
 
-    fun setDnsEventSink(sink: DnsEventSink?) = nativeSetDnsEventSink(sink)
+    fun setDnsEventSink(sink: DnsEventSink?) = core.setEventListener(sink)
 
     fun setRequestCapture(uid: Int, session: Long, minutes: Int) =
-        nativeSetRequestCapture(uid, session, minutes)
-
-    private external fun nativeSetRequestCapture(uid: Int, session: Long, minutes: Int)
-
-    private external fun nativeReplaceRules(
-        dns: String,
-        browser: String,
-        custom: String,
-        apply: Boolean,
-    ): String
+        core.setRequestCapture(uid, session, minutes)
 
     /**
      * Installs AdGuard Scriptlets `scriptlets.corelibs.json` / `redirects.json` (either may be
@@ -63,64 +58,19 @@ class EngineBridge {
      * the previous set stays active.
      */
     fun setResources(scriptlets: String, redirects: String): String =
-        nativeSetResources(scriptlets, redirects) ?: error(localizedError(L10n.string.resources_load_failed))
+        core.setResources(scriptlets, redirects) ?: error(localizedError(L10n.string.resources_load_failed))
 
-    private external fun nativeSetResources(scriptlets: String, redirects: String): String?
-
-    private external fun nativeConfigureDns(json: String): Boolean
-
-    private external fun nativeSetDnsEventSink(sink: DnsEventSink?)
-
-    fun version(): String = nativeVersion()
+    fun version(): String = core.version()
 
     /** Consumes a detached TUN fd, even when startup returns false. */
-    fun start(fd: Int, protector: SocketProtector, dns: String): Boolean =
-        nativeStart(fd, protector, dns)
+    fun start(fd: Int, protector: SocketProtector, dns: String): Boolean = core.start(fd, protector, dns)
 
-    fun stop() = nativeStop()
+    fun stop() = core.stop()
 
-    fun updateNetwork(dns: String): Boolean = nativeUpdateNetwork(dns)
+    fun updateNetwork(dns: String): Boolean = core.updateNetwork(dns)
 
-    fun isRunning(): Boolean = nativeIsRunning()
+    fun isRunning(): Boolean = core.isRunning()
 
-    fun counters(): LongArray = nativeCounters()
-
-    private external fun nativeVersion(): String
-
-    private external fun nativeStart(fd: Int, protector: SocketProtector, dns: String): Boolean
-
-    private external fun nativeStop()
-
-    private external fun nativeUpdateNetwork(dns: String): Boolean
-
-    private external fun nativeIsRunning(): Boolean
-
-    private external fun nativeCounters(): LongArray
-
-    private companion object {
-        init {
-            System.loadLibrary("blockads_core")
-        }
-    }
-}
-
-/** Called once per outbound socket, before connect/send; failure closes the socket. */
-fun interface SocketProtector {
-    fun protect(fd: Int): Boolean
-
-    fun connectionOwner(
-        protocol: Int,
-        source: String,
-        sourcePort: Int,
-        destination: String,
-        destinationPort: Int,
-    ): Int = -1
-}
-
-fun interface DnsEventSink {
-    fun onDnsEvents(events: String)
-}
-
-fun interface RootCaSigner {
-    fun sign(data: ByteArray): ByteArray
+    /** See [io.github.tothanggtvt.openadblock.core.TrafficCounters] for the order. */
+    fun counters(): LongArray = core.counters().toArray()
 }

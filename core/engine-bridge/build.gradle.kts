@@ -35,7 +35,8 @@ abstract class VerifyNativeCore : DefaultTask() {
     @TaskAction
     fun verify() {
         val guidance =
-            "Rust/JNI binaries are missing or stale. Run scripts/build-native.sh before building the APK."
+            "Rust/JNI binaries are missing or stale. Run scripts/build-native.sh before building the APK " +
+                "(and `git submodule update --init` if open-adblock-core is empty)."
         val stamp = metadata.singleFile
         val digest = MessageDigest.getInstance("SHA-256")
         val root = repositoryRoot.get().asFile.toPath()
@@ -80,27 +81,34 @@ val verifyNativeCore =
     tasks.register<VerifyNativeCore>("verifyNativeCore") {
         repositoryRoot.set(rootProject.layout.projectDirectory)
         sources.from(
-            rootProject.fileTree("nativecore/src") { include("**/*.rs", "**/*.js") },
-            rootProject.fileTree("nativecore/vendor") { include("**/*.rs", "**/Cargo.toml") },
+            rootProject.fileTree("open-adblock-core/crates") {
+                include("**/*.rs", "**/*.js", "**/Cargo.toml")
+                exclude("**/tests/**", "**/benches/**")
+            },
+            rootProject.fileTree("open-adblock-core/vendor") { include("**/*.rs", "**/Cargo.toml") },
+            rootProject.fileTree("open-adblock-core/bindings/java/src/main") { include("**/*.java", "**/*.pro") },
             rootProject.files(
-                "nativecore/Cargo.toml",
-                "nativecore/Cargo.lock",
-                "rust-toolchain.toml",
+                "open-adblock-core/Cargo.toml",
+                "open-adblock-core/Cargo.lock",
+                "open-adblock-core/rust-toolchain.toml",
+                "open-adblock-core/scripts/build-android.sh",
+                "open-adblock-core/scripts/check-jni-exports.py",
                 "scripts/build-native.sh",
                 "scripts/native-stamp.py",
-            ),
-            layout.projectDirectory.file(
-                "src/main/java/com/utc/color/blockads/core/enginebridge/EngineBridge.kt"
             ),
         )
         metadata.from(layout.projectDirectory.file("src/main/jniLibs/.build.properties"))
         binaries.from(
             listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86").map {
-                layout.projectDirectory.file("src/main/jniLibs/$it/libblockads_core.so")
+                layout.projectDirectory.file("src/main/jniLibs/$it/libopenadblock_jni.so")
             }
         )
     }
 
 tasks.named("preBuild") { dependsOn(verifyNativeCore) }
 
-dependencies { implementation(project(":core:common")) }
+dependencies {
+    // Public Java API of the core; `api` so modules using EngineBridge see the callback types.
+    api("io.github.tothanggtvt.openadblock:openadblock-core")
+    implementation(project(":core:common"))
+}
